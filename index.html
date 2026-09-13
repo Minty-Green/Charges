@@ -1315,6 +1315,238 @@ input:focus,select:focus,textarea:focus{
   min-width:170px!important;
 }
 
+
+/* =========================================================
+   v46 — Final Mobile & Accessibility Polish
+   No billing/database logic changes.
+   ========================================================= */
+
+/* Clear keyboard focus across the app */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible{
+  outline:3px solid rgba(32,132,106,.28)!important;
+  outline-offset:2px;
+}
+
+/* Prevent long labels/emails from breaking layouts */
+.user-chip,
+.entity-title,
+.entity-sub,
+.staff-email,
+.note,
+.status,
+td,
+th{
+  overflow-wrap:anywhere;
+}
+
+/* Mobile navigation behaves more like a native tab strip */
+@media(max-width:850px){
+  .tabs{
+    scroll-snap-type:x proximity;
+    scrollbar-width:none;
+    overscroll-behavior-x:contain;
+  }
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs .tab{
+    scroll-snap-align:start;
+    min-height:44px;
+    display:inline-flex;
+    align-items:center;
+  }
+
+  /* Keep touch targets comfortably tappable */
+  .btn,
+  button,
+  select,
+  input[type="button"],
+  input[type="submit"]{
+    min-height:44px;
+  }
+
+  .btn-compact{
+    min-height:40px!important;
+    padding-top:8px!important;
+    padding-bottom:8px!important;
+  }
+
+  /* Cleaner page spacing on smaller screens */
+  .wrap{padding-left:10px!important;padding-right:10px!important}
+  .page-heading{margin-bottom:12px}
+  .page-heading-copy h1{line-height:1.15}
+  .page-heading-copy p{max-width:680px}
+
+  /* Cards should not feel cramped on mobile */
+  .card.panel,
+  .security-card{
+    padding:14px!important;
+  }
+
+  /* Management action rows stack naturally */
+  .entity-list .row,
+  .staff-card{
+    gap:10px!important;
+  }
+  .entity-actions,
+  .staff-actions{
+    width:100%;
+  }
+  .entity-actions .btn,
+  .staff-actions .btn{
+    flex:1 1 auto;
+  }
+
+  /* Tables remain readable with clear horizontal affordance */
+  .admin-table-wrap{
+    position:relative;
+    -webkit-overflow-scrolling:touch;
+  }
+  .admin-table-wrap:before{
+    content:"Swipe horizontally to view full table";
+    position:sticky;
+    left:0;
+    display:block;
+    width:max-content;
+    max-width:calc(100vw - 48px);
+    margin:8px 10px 4px;
+    padding:5px 8px;
+    border-radius:999px;
+    background:#edf7f3;
+    color:#55736b;
+    font-size:9px;
+    font-weight:800;
+    letter-spacing:.02em;
+    z-index:3;
+  }
+  .admin-table-wrap table{
+    font-size:11px;
+  }
+  .admin-table-wrap th,
+  .admin-table-wrap td{
+    padding:8px!important;
+  }
+
+  /* Make top controls wrap cleanly instead of squeezing */
+  .topbar{
+    gap:8px;
+  }
+  .topbar .right{
+    gap:6px!important;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+  }
+  #activeBranchChip{
+    max-width:170px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .theme-picker{order:2}
+  .app-account{order:3}
+
+  /* Forms: primary actions easier to reach */
+  .management-form-card .btn-primary,
+  .settings-grid .security-card .btn-primary{
+    width:100%;
+  }
+
+  /* Daily Entry quantity controls stay comfortable */
+  .daily-stepper button{
+    touch-action:manipulation;
+  }
+}
+
+@media(max-width:560px){
+  body{font-size:13px}
+
+  .topbar{
+    min-height:62px;
+    align-items:center;
+  }
+  .topbar .brand small{display:none}
+  .topbar .right{
+    width:auto;
+    margin-left:auto;
+  }
+  #activeBranchChip{
+    max-width:128px;
+    font-size:9px!important;
+  }
+
+  /* Theme and account controls: compact but still tappable */
+  .theme-picker-button,
+  .account-trigger{
+    min-height:42px!important;
+  }
+  .theme-picker-button{
+    padding-left:10px!important;
+    padding-right:10px!important;
+  }
+
+  /* Search boxes fit naturally */
+  .list-search{
+    width:100%;
+    min-width:0!important;
+  }
+
+  /* Summary cards remain readable */
+  .summary{
+    gap:8px!important;
+  }
+  .kpi{
+    padding:13px!important;
+  }
+  .kpi span{
+    font-size:9px!important;
+  }
+
+  /* Dialogs feel better on phone */
+  .app-modal-backdrop{
+    align-items:end;
+    padding:10px;
+  }
+  .app-modal{
+    width:100%;
+    max-height:90vh;
+    border-radius:18px 18px 10px 10px;
+  }
+  .app-modal-body{
+    overflow:auto;
+    max-height:60vh;
+  }
+  .app-modal-actions{
+    position:sticky;
+    bottom:0;
+  }
+  .app-modal-actions .btn{
+    flex:1;
+  }
+
+  /* Avoid tiny footer/support text */
+  .login-footer{
+    font-size:10px!important;
+    line-height:1.6!important;
+    padding-left:10px;
+    padding-right:10px;
+  }
+}
+
+/* Respect operating-system reduced-motion preference */
+@media(prefers-reduced-motion:reduce){
+  *,
+  *::before,
+  *::after{
+    animation-duration:.001ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.001ms!important;
+    scroll-behavior:auto!important;
+  }
+}
+
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -1393,7 +1625,7 @@ input:focus,select:focus,textarea:focus{
 </div>
 <span id="activeBranchChip" class="badge" style="background:rgba(255,255,255,.15);color:#fff;margin-right:6px"></span>
 <div class="app-account">
-  <button id="accountMenuBtn" class="account-trigger" type="button" aria-expanded="false">
+  <button id="accountMenuBtn" class="account-trigger" type="button" aria-expanded="false" aria-label="Open account menu" title="Account menu">
     <span id="accountAvatar" class="account-avatar">MG</span>
     <span class="account-trigger-copy">
       <span id="accountButtonName" class="account-trigger-name">Account</span>
