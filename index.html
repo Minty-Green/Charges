@@ -270,6 +270,32 @@
       border-color:#d7dfe1;
     }
 
+
+    /* Master Calendar readability: subtle banded rows + row hover */
+    #calendarTable tbody tr:not(.section-row):nth-child(even) > td:not(.recurring-date-cell){
+      background:#f8fbfc;
+    }
+
+    #calendarTable tbody tr:not(.section-row):hover > td:not(.recurring-date-cell){
+      background:#eef6f7;
+    }
+
+    #calendarTable tbody tr:not(.section-row):hover > td.recurring-date-cell{
+      background:#e5eaec;
+    }
+
+    #calendarTable tbody tr:not(.section-row):hover > td.item-col,
+    #calendarTable tbody tr:not(.section-row):hover > td.unit-col,
+    #calendarTable tbody tr:not(.section-row):hover > td.price-col,
+    #calendarTable tbody tr:not(.section-row):hover > td.total-col{
+      box-shadow: inset 0 1px 0 rgba(54, 102, 92, 0.08),
+                  inset 0 -1px 0 rgba(54, 102, 92, 0.08);
+    }
+
+    #calendarTable tbody tr:not(.section-row):hover input.qty{
+      background:#ffffff;
+    }
+
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
