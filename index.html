@@ -1040,6 +1040,30 @@ input:focus,select:focus,textarea:focus{
 #dailySaveStatus.saved:before{content:'✓';font-weight:950}
 #dailySaveStatus.error{color:#b33b35!important;font-weight:750}
 #dailySaveStatus.locked{color:#946200!important;font-weight:750}
+
+/* v51 — Daily Entry read-only recurring rows + floating save feedback */
+.daily-item.daily-readonly{
+  background:#f2f5f4!important;
+  border-color:#d7e1de!important;
+}
+.daily-item.daily-readonly .daily-item-info strong{color:#526560}
+.daily-item.daily-readonly .daily-item-info small{color:#778783}
+.daily-readonly-badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:34px;padding:7px 10px;border-radius:9px;
+  border:1px solid #d3dedb;background:#e8eeec;color:#5c6d68;
+  font-size:11px;font-weight:850;text-align:center;white-space:nowrap;
+}
+.daily-save-toast{
+  position:fixed;top:78px;left:50%;transform:translateX(-50%) translateY(-8px);
+  z-index:220;max-width:min(92vw,520px);padding:10px 14px;border-radius:12px;
+  box-shadow:0 12px 30px rgba(20,67,57,.18);font-size:12px;font-weight:850;
+  opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s ease;
+}
+.daily-save-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.daily-save-toast.saved{background:#e8f7ef;color:#166534;border:1px solid #b9e4c9}
+.daily-save-toast.error{background:#fff0ef;color:#a12626;border:1px solid #efc8c4}
+@media(max-width:850px){.daily-save-toast{top:70px}}
 @keyframes dailySpin{to{transform:rotate(360deg)}}
 .daily-no-resident{
   padding:34px 18px;
@@ -2095,6 +2119,7 @@ th{
           </div>
 
           <div id="dailyEntryList"></div>
+          <div id="dailySaveToast" class="daily-save-toast" role="status" aria-live="polite"></div>
 
           <div class="daily-summary-bar">
             <div>
@@ -2303,7 +2328,7 @@ th{
             <div style="display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap">
               <div>
                 <h3 style="margin-bottom:4px">Existing Staff</h3>
-                <p class="note" style="margin:0">View staff accounts and, as Super Admin, manage display names and access separately.</p>
+                <p id="staffListDescription" class="note" style="margin:0">View staff accounts for your branch.</p>
               </div>
               <button id="refreshStaffBtn" class="btn btn-light btn-compact" style="border:1px solid var(--border)">Refresh</button>
             </div>
@@ -2784,6 +2809,7 @@ function addSidebarGroups(){
       tabs.insertBefore(el,btn);
     }
   });
+  refreshSidebarGroupVisibility();
 }
 
 function setupAccountMenu(){
@@ -3511,6 +3537,17 @@ function setDailySaveStatus(message, state=''){
   el.classList.remove('saving','saved','error','locked');
   if(state) el.classList.add(state);
 }
+let dailySaveToastTimer=null;
+function showDailySaveToast(message,state='saved'){
+  const el=$('dailySaveToast');
+  if(!el)return;
+  clearTimeout(dailySaveToastTimer);
+  el.textContent=message||'';
+  el.classList.remove('saved','error','show');
+  el.classList.add(state==='error'?'error':'saved');
+  requestAnimationFrame(()=>el.classList.add('show'));
+  dailySaveToastTimer=setTimeout(()=>el.classList.remove('show'), state==='error'?3200:1600);
+}
 
 async function loadDailyEntry(){
   const rid = $('dailyResidentSelect')?.value || $('residentSelect')?.value || '';
@@ -3625,21 +3662,26 @@ function renderDailyEntry(){
           qty
         });
       }
+      const isReadOnlyRecurring = isRecurringReadOnlyItem(it);
       return `
         <div
-          class="daily-item${qty > 0 ? ' has-quantity' : ''}"
+          class="daily-item${qty > 0 ? ' has-quantity' : ''}${isReadOnlyRecurring ? ' daily-readonly' : ''}"
           data-item-id="${it.id}"
           data-item-name="${esc(it.name)}"
         >
           <div class="daily-item-info">
             <strong>${esc(it.name)}</strong>
-            <small>${esc(it.unit || '')}${it.price == null ? '' : ' · ' + money(it.price)}</small>
+            <small>${esc(it.unit || '')}${it.price == null ? '' : ' · ' + money(it.price)}${isReadOnlyRecurring ? ' · Monthly Package / Service · Read only' : ''}</small>
           </div>
-          <div class="daily-stepper">
-            <button type="button" onclick="changeDailyQty('${it.id}',-1)" aria-label="Decrease ${esc(it.name)}" title="Decrease">−</button>
-            <input type="number" min="0" step="1" inputmode="numeric" value="${qty || ''}" data-daily-item="${it.id}" onchange="setDailyQtyFromInput(this)" aria-label="Quantity for ${esc(it.name)}">
-            <button type="button" onclick="changeDailyQty('${it.id}',1)" aria-label="Increase ${esc(it.name)}" title="Increase">+</button>
-          </div>
+          ${isReadOnlyRecurring ? `
+            <div class="daily-readonly-badge" title="Managed in Monthly Packages">Read only</div>
+          ` : `
+            <div class="daily-stepper">
+              <button type="button" onclick="changeDailyQty('${it.id}',-1)" aria-label="Decrease ${esc(it.name)}" title="Decrease">−</button>
+              <input type="number" min="0" step="1" inputmode="numeric" value="${qty || ''}" data-daily-item="${it.id}" onchange="setDailyQtyFromInput(this)" aria-label="Quantity for ${esc(it.name)}">
+              <button type="button" onclick="changeDailyQty('${it.id}',1)" aria-label="Increase ${esc(it.name)}" title="Increase">+</button>
+            </div>
+          `}
         </div>
       `;
     }).join('');
@@ -3684,6 +3726,10 @@ async function saveDailyQty(itemId, qty){
 
   const item = items.find(i => i.id === itemId);
   if(!item) return;
+  if(isRecurringReadOnlyItem(item)){
+    showDailySaveToast('Monthly packages and services are read only here.','error');
+    return;
+  }
 
   qty = Math.max(0, Number(qty || 0));
   const existing = dailyEntries.find(e => e.item_id === itemId);
@@ -3718,10 +3764,12 @@ async function saveDailyQty(itemId, qty){
 
   if(error){
     setDailySaveStatus(error.message,'error');
+    showDailySaveToast(`Save failed — ${error.message}`,'error');
     return toast(error.message);
   }
 
   await loadDailyEntry();
+  showDailySaveToast(`✓ Saved — ${item.name} · Qty ${qty}`,'saved');
 
   if($('residentSelect')?.value === rid){
     await loadMonth();
@@ -3926,6 +3974,12 @@ setStatus(
     'ok'
   );
 }function groupItems(){const order=['Stock','Machine Rental','Package','Service'];return order.map(c=>[c,items.filter(i=>i.category===c)]).filter(x=>x[1].length)}
+function isRecurringReadOnlyItem(item){
+  if(!item) return false;
+  const recurringCategory = ['Machine Rental','Package','Service'].includes(item.category);
+  const hasRecurringRecord = recurring.some(r => r.item_id === item.id);
+  return recurringCategory || hasRecurringRecord;
+}
 
 function getCalendarCategoryNames() {
   return groupItems().map(([cat]) => cat);
@@ -4091,14 +4145,10 @@ function renderCalendar() {
       </tr>
     `;
 
-    const isRecurringCategory =
-      cat === 'Machine Rental' ||
-      cat === 'Package' ||
-      cat === 'Service';
-
     for (const it of list) {
 
       let rowTotal = 0;
+      const isRecurringCategory = isRecurringReadOnlyItem(it);
 
       // Monthly Package / Machine Rental / Service rows are controlled only from
       // the Monthly Packages tab. Their calendar dates are read-only.
@@ -7816,7 +7866,7 @@ async function loadStaffList() {
           ${canManage ? `
             <button class="btn btn-subtle btn-compact" onclick="editStaffDisplayName('${p.id}')">Edit Name</button>
             <button class="btn btn-subtle btn-compact" onclick="editStaffAccess('${p.id}')">Edit Access</button>
-            <button class="btn btn-subtle btn-compact" onclick="sendStaffPasswordReset('${p.id}')">Reset Password</button>
+            <button class="btn btn-subtle btn-compact" onclick="sendStaffPasswordReset('${p.id}',this)">Reset Password</button>
           ` : ''}
         </div>
       </div>
@@ -7911,7 +7961,7 @@ window.editStaffAccess = async id => {
   await loadStaffList();
 };
 
-window.sendStaffPasswordReset = async id => {
+window.sendStaffPasswordReset = async (id, triggerButton=null) => {
   if (currentUserRole !== 'super_admin') {
     toast('Super admin access required');
     return;
@@ -7926,20 +7976,53 @@ window.sendStaffPasswordReset = async id => {
   const ok = await appConfirm(`Reset staff password\n\nSend a secure password reset email to ${staff.email}?`, {confirmText:'Send Reset Email'});
   if (!ok) return;
 
-  const { error } = await sb.auth.resetPasswordForEmail(staff.email, {
-    redirectTo: window.location.origin + window.location.pathname
-  });
-
-  if (error) {
-    toast(error.message);
-    return;
+  const btn = triggerButton instanceof HTMLElement ? triggerButton : null;
+  const originalText = btn?.textContent || 'Reset Password';
+  if(btn){
+    btn.disabled=true;
+    btn.textContent='Sending password reset…';
   }
 
-  toast('Password reset email sent');
+  try{
+    const { error } = await sb.auth.resetPasswordForEmail(staff.email, {
+      redirectTo: window.location.origin + window.location.pathname
+    });
+
+    if (error) {
+      if(btn) btn.textContent='Reset failed';
+      toast(error.message);
+      return;
+    }
+
+    if(btn) btn.textContent='Reset email sent ✓';
+    toast('Reset email sent');
+  } finally {
+    if(btn){
+      setTimeout(()=>{btn.disabled=false;btn.textContent=originalText;},1400);
+    }
+  }
 };
 
 if ($('refreshStaffBtn')) {
   $('refreshStaffBtn').onclick = loadStaffList;
+}
+
+function refreshSidebarGroupVisibility(){
+  const tabs=document.querySelector('.tabs');
+  if(!tabs)return;
+  const children=[...tabs.children];
+  children.forEach((el,index)=>{
+    if(!el.classList.contains('nav-group-label'))return;
+    let hasVisibleButton=false;
+    for(let i=index+1;i<children.length;i++){
+      const next=children[i];
+      if(next.classList.contains('nav-group-label'))break;
+      if(next.classList.contains('tab') && !next.classList.contains('hidden') && getComputedStyle(next).display!=='none'){
+        hasVisibleButton=true;break;
+      }
+    }
+    el.classList.toggle('hidden',!hasVisibleButton);
+  });
 }
 
 function applyRoleAccess() {
@@ -7964,6 +8047,17 @@ function applyRoleAccess() {
     .forEach(el => {
       el.classList.toggle('hidden', !isSuperAdmin);
     });
+
+  if($('staffListDescription')){
+    $('staffListDescription').textContent = isSuperAdmin
+      ? 'View staff accounts across branches. Edit names and access separately when needed.'
+      : isAdmin
+        ? 'View staff accounts for your branch. Super Admin controls cross-branch access and role changes.'
+        : 'Your account access is managed by an administrator.';
+  }
+
+  refreshSidebarGroupVisibility();
+  if(window.innerWidth<=850) syncMobileNav();
 
   if ($('userRole')) {
 
@@ -8260,13 +8354,13 @@ async function loadLoginActivity() {
           profile.display_name,
           profile.email || row.attempted_email,
           row.user_id || profile.id,
-          {showId:true}
+          {showId:false}
         )
       : renderUserIdentity(
           'Unknown user',
           row.attempted_email || '',
           row.user_id || '',
-          {showId:true}
+          {showId:false}
         );
 
     return `
@@ -8964,5 +9058,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+<!-- v51 — consolidated production review fixes -->
 </body>
 </html>
