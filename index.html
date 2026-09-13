@@ -1840,6 +1840,49 @@ th{
   font-weight:900;
 }
 
+
+/* =========================================================
+   v50 — What's New release notice
+   ========================================================= */
+.whats-new-list{
+  display:grid;
+  gap:8px;
+  margin-top:12px;
+}
+.whats-new-item{
+  display:flex;
+  align-items:flex-start;
+  gap:9px;
+  padding:9px 10px;
+  border:1px solid #e1ece8;
+  border-radius:11px;
+  background:#f8fbfa;
+  color:#506a63;
+  font-size:12px;
+  line-height:1.45;
+}
+.whats-new-item span:first-child{
+  width:22px;height:22px;flex:0 0 auto;
+  display:grid;place-items:center;
+  border-radius:7px;
+  background:#e8f6f1;
+  color:var(--green2);
+  font-weight:900;
+}
+.whats-new-version{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  margin-top:4px;
+  padding:5px 8px;
+  border-radius:999px;
+  background:#e9f6f1;
+  color:var(--green2);
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.02em;
+}
+
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -3413,6 +3456,7 @@ async function enterApp(user){
   }
 
   setTimeout(maybeShowMobileInstallPopup,850);
+  setTimeout(maybeShowWhatsNew, isPhoneViewport() ? 2200 : 900);
 }
 async function loadResidents(){const {data,error}=await sb.from('residents').select('*').eq('active',true).eq('branch_id',currentBranchId).order('name');if(error)throw error;residents=data||[]}
 async function loadItems(){const {data,error}=await sb.from('items').select('*').eq('active',true).eq('branch_id',currentBranchId).order('sort_order').order('name');if(error)throw error;items=data||[]}
@@ -8626,6 +8670,64 @@ $('residentListSearch')?.addEventListener('input', applyResidentListSearch);
 $('itemListSearch')?.addEventListener('input', applyItemListSearch);
 
 
+
+// ---------- v50 one-time What's New notice ----------
+const WHATS_NEW_RELEASE='v50';
+const WHATS_NEW_KEY=`mintygreenWhatsNewSeen:${WHATS_NEW_RELEASE}`;
+let whatsNewInProgress=false;
+
+function hasSeenWhatsNew(){
+  try{return localStorage.getItem(WHATS_NEW_KEY)==='1'}catch(e){return false}
+}
+function markWhatsNewSeen(){
+  try{localStorage.setItem(WHATS_NEW_KEY,'1')}catch(e){}
+}
+
+function whatsNewHtmlForRole(){
+  const isManagement=currentUserRole==='admin' || currentUserRole==='super_admin';
+
+  if(isManagement){
+    return `
+      <div class="whats-new-version">Mintygreen Charges · ${WHATS_NEW_RELEASE}</div>
+      <div class="whats-new-list">
+        <div class="whats-new-item"><span>✓</span><div><strong>One unified system</strong><br>The same Mintygreen Charges app is now optimized for desktop and phone.</div></div>
+        <div class="whats-new-item"><span>✓</span><div><strong>Full mobile management</strong><br>Admin and Super Admin navigation is available from the mobile Menu according to account permissions.</div></div>
+        <div class="whats-new-item"><span>✓</span><div><strong>Installable phone app</strong><br>The main system can be installed to the Home Screen for an app-style experience.</div></div>
+        <div class="whats-new-item"><span>✓</span><div><strong>Smoother account experience</strong><br>Login, logout, Settings and mobile navigation have been polished while keeping the existing security controls.</div></div>
+      </div>`;
+  }
+
+  return `
+    <div class="whats-new-version">Mintygreen Charges · ${WHATS_NEW_RELEASE}</div>
+    <div class="whats-new-list">
+      <div class="whats-new-item"><span>✓</span><div><strong>Better on phone</strong><br>Daily Entry and navigation are now easier to use on mobile.</div></div>
+      <div class="whats-new-item"><span>✓</span><div><strong>Install to Home Screen</strong><br>You can install Mintygreen Charges on your phone for quicker access.</div></div>
+      <div class="whats-new-item"><span>✓</span><div><strong>Smoother sign in and out</strong><br>The account experience has been polished without changing how you enter charges.</div></div>
+    </div>`;
+}
+
+async function maybeShowWhatsNew(){
+  if(whatsNewInProgress || hasSeenWhatsNew()) return;
+  if(!currentUser) return;
+  if($('appView')?.classList.contains('hidden')) return;
+
+  // Avoid stacking this on top of the first-time mobile install prompt.
+  if(installPopupInProgress) return;
+
+  whatsNewInProgress=true;
+  await openAppModal({
+    title:"What's New",
+    message: currentUserRole==='admin' || currentUserRole==='super_admin'
+      ? 'The unified Mintygreen Charges experience is now live.'
+      : 'Mintygreen Charges has been improved for easier daily use.',
+    confirmText:'Got it',
+    cancelText:'Close',
+    customHtml:whatsNewHtmlForRole()
+  });
+  markWhatsNewSeen();
+  whatsNewInProgress=false;
+}
+
 // ---------- v48 unified mobile navigation + install ----------
 let deferredInstallPrompt = null;
 const INSTALL_POPUP_SEEN_KEY='mintygreenInstallPopupSeenV49';
@@ -8702,6 +8804,7 @@ async function maybeShowMobileInstallPopup(){
   if(choice?.outcome==='accepted'){
     toast('Installing Mintygreen Charges…');
   }
+  setTimeout(maybeShowWhatsNew,900);
 }
 
 
