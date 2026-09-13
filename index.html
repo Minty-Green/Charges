@@ -221,6 +221,112 @@
       color:#6f7f7a;
       white-space:nowrap;
     }
+
+    .calendar-tools{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      padding:10px 12px 2px;
+    }
+    .calendar-search-wrap{
+      position:relative;
+      display:flex;
+      align-items:center;
+      width:min(360px,100%);
+    }
+    .calendar-search{
+      width:100%;
+      min-height:36px;
+      padding:8px 34px 8px 34px;
+      border:1px solid var(--border);
+      border-radius:8px;
+      background:#fff;
+      color:var(--text);
+      font:inherit;
+      outline:none;
+    }
+    .calendar-search:focus{
+      border-color:var(--green);
+      box-shadow:0 0 0 2px rgba(23,107,91,.08);
+    }
+    .calendar-search-icon{
+      position:absolute;
+      left:11px;
+      color:#71807b;
+      font-size:16px;
+      pointer-events:none;
+    }
+    .calendar-clear-btn{
+      position:absolute;
+      right:6px;
+      width:27px;
+      height:27px;
+      border:0;
+      border-radius:6px;
+      background:transparent;
+      color:#71807b;
+      font-size:19px;
+      line-height:1;
+      cursor:pointer;
+    }
+    .calendar-clear-btn:hover{
+      background:#edf3f1;
+      color:var(--green2);
+    }
+    .calendar-category-actions{
+      display:flex;
+      align-items:center;
+      gap:7px;
+      flex-wrap:wrap;
+    }
+    .calendar-filter-status{
+      margin:6px 12px 0;
+      padding:7px 10px;
+      border-radius:7px;
+      background:#f2f7f5;
+      color:#53635e;
+      font-size:11px;
+      font-weight:700;
+    }
+    .section-row{
+      cursor:pointer;
+      user-select:none;
+    }
+    .calendar-category-toggle{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:18px;
+      height:18px;
+      margin-right:5px;
+      border:0;
+      padding:0;
+      background:transparent;
+      color:#355b52;
+      font-size:13px;
+      font-weight:900;
+      vertical-align:middle;
+      cursor:pointer;
+    }
+    .section-row:hover td{
+      background:#e4eeeb!important;
+    }
+    .calendar-no-results td{
+      padding:18px!important;
+      color:#64748b;
+      text-align:center!important;
+      background:#fff!important;
+      font-weight:700;
+    }
+    @media(max-width:650px){
+      .calendar-tools{align-items:stretch}
+      .calendar-search-wrap{width:100%}
+      .calendar-category-actions{width:100%}
+      .calendar-category-actions .btn{flex:1}
+    }
+
     .recurring-legend{
       display:flex;
       flex-wrap:wrap;
@@ -539,6 +645,35 @@
         </div>
         <div class="card table-card">
           <div class="table-head"><h2 id="calendarTitle">Calendar Charges</h2><small>Enter quantity under the date used. Changes save automatically.</small></div>
+
+          <div class="calendar-tools" aria-label="Master Calendar tools">
+            <div class="calendar-search-wrap">
+              <span class="calendar-search-icon" aria-hidden="true">⌕</span>
+              <input
+                id="calendarItemSearch"
+                class="calendar-search"
+                type="search"
+                placeholder="Search item..."
+                autocomplete="off"
+                aria-label="Search Master Calendar items"
+              >
+              <button
+                id="calendarSearchClearBtn"
+                class="calendar-clear-btn"
+                type="button"
+                title="Clear search"
+                aria-label="Clear item search"
+              >×</button>
+            </div>
+
+            <div class="calendar-category-actions">
+              <button id="calendarExpandAllBtn" class="btn btn-light btn-compact" type="button">Expand All</button>
+              <button id="calendarCollapseAllBtn" class="btn btn-light btn-compact" type="button">Collapse All</button>
+            </div>
+          </div>
+
+          <div id="calendarFilterStatus" class="calendar-filter-status hidden"></div>
+
           <div class="recurring-legend" aria-label="Recurring package calendar legend">
             <span class="recurring-legend-item"><span class="recurring-legend-symbol">S</span> Subscription Start</span>
             <span class="recurring-legend-item"><span class="recurring-legend-symbol tick">✓</span> Active From</span>
@@ -844,6 +979,10 @@ let recurringPriceHistory = [];
 let dailySelectedDate = formatDateISO(new Date());
 let dailyEntries = [];
 let chargesDisplayMode = 'calendar';
+
+// Master Calendar display preferences only (no billing/export impact)
+let calendarItemSearchText = '';
+const collapsedCalendarCategories = new Set();
 let turnstileWidgetId = null;
 let captchaToken = null;
 let passwordRecoveryMode = false;
@@ -1746,6 +1885,128 @@ setStatus(
     'ok'
   );
 }function groupItems(){const order=['Stock','Machine Rental','Package','Service'];return order.map(c=>[c,items.filter(i=>i.category===c)]).filter(x=>x[1].length)}
+
+function getCalendarCategoryNames() {
+  return groupItems().map(([cat]) => cat);
+}
+
+function updateCalendarCategoryToggleIcons() {
+  document.querySelectorAll('#calendarTable .section-row').forEach(row => {
+    const cat = row.dataset.category || '';
+    const btn = row.querySelector('.calendar-category-toggle');
+    if (!btn) return;
+
+    const collapsed = collapsedCalendarCategories.has(cat);
+    btn.textContent = collapsed ? '▶' : '▼';
+    btn.setAttribute('aria-label', `${collapsed ? 'Expand' : 'Collapse'} ${cat}`);
+    btn.title = `${collapsed ? 'Expand' : 'Collapse'} ${cat}`;
+  });
+}
+
+function applyCalendarViewFilters() {
+  const table = $('calendarTable');
+  if (!table) return;
+
+  const search = calendarItemSearchText.trim().toLowerCase();
+  const itemRows = Array.from(
+    table.querySelectorAll('tbody tr.calendar-item-row')
+  );
+  const sectionRows = Array.from(
+    table.querySelectorAll('tbody tr.section-row')
+  );
+
+  let visibleItems = 0;
+
+  sectionRows.forEach(sectionRow => {
+    const category = sectionRow.dataset.category || '';
+    const categoryRows = itemRows.filter(
+      row => (row.dataset.category || '') === category
+    );
+
+    let categoryVisibleCount = 0;
+
+    categoryRows.forEach(row => {
+      const itemName = (row.dataset.itemName || '').toLowerCase();
+      const matchesSearch = !search || itemName.includes(search);
+
+      // Search temporarily reveals matching items even if their category
+      // was collapsed. Clearing the search restores the collapsed state.
+      const hiddenByCollapse =
+        !search && collapsedCalendarCategories.has(category);
+
+      const shouldShow = matchesSearch && !hiddenByCollapse;
+      row.classList.toggle('hidden', !shouldShow);
+
+      if (shouldShow) {
+        categoryVisibleCount++;
+        visibleItems++;
+      }
+    });
+
+    sectionRow.classList.toggle(
+      'hidden',
+      search ? categoryVisibleCount === 0 : false
+    );
+  });
+
+  const oldNoResults =
+    table.querySelector('tbody tr.calendar-no-results');
+
+  if (oldNoResults) oldNoResults.remove();
+
+  if (search && visibleItems === 0) {
+    const tbody = table.querySelector('tbody');
+    const columnCount =
+      table.querySelectorAll('thead th').length || 1;
+
+    if (tbody) {
+      const row = document.createElement('tr');
+      row.className = 'calendar-no-results';
+      row.innerHTML =
+        `<td colspan="${columnCount}">No items found for “${esc(calendarItemSearchText.trim())}”.</td>`;
+      tbody.appendChild(row);
+    }
+  }
+
+  const status = $('calendarFilterStatus');
+  if (status) {
+    if (search) {
+      status.textContent =
+        `${visibleItems} item${visibleItems === 1 ? '' : 's'} matching “${calendarItemSearchText.trim()}”`;
+      status.classList.remove('hidden');
+    } else {
+      status.textContent = '';
+      status.classList.add('hidden');
+    }
+  }
+
+  updateCalendarCategoryToggleIcons();
+}
+
+function toggleCalendarCategory(category) {
+  if (!category) return;
+
+  if (collapsedCalendarCategories.has(category)) {
+    collapsedCalendarCategories.delete(category);
+  } else {
+    collapsedCalendarCategories.add(category);
+  }
+
+  applyCalendarViewFilters();
+}
+
+function expandAllCalendarCategories() {
+  collapsedCalendarCategories.clear();
+  applyCalendarViewFilters();
+}
+
+function collapseAllCalendarCategories() {
+  getCalendarCategoryNames().forEach(cat =>
+    collapsedCalendarCategories.add(cat)
+  );
+  applyCalendarViewFilters();
+}
+
 function renderCalendar() {
   const month = $('monthPicker').value || todayMonth();
   const billingDates = getBillingDates(month);
@@ -1776,8 +2037,12 @@ function renderCalendar() {
   for (const [cat, list] of groupItems()) {
 
     h += `
-      <tr class="section-row">
-        <td class="item-col">${esc(cat)}</td>
+      <tr
+        class="section-row"
+        data-category="${esc(cat)}"
+        title="Click to expand or collapse ${esc(cat)}"
+      >
+        <td class="item-col"><button class="calendar-category-toggle" type="button" tabindex="-1" aria-hidden="true">▼</button>${esc(cat)}</td>
         <td class="unit-col"></td>
         <td class="price-col"></td>
         ${billingDates.map(d => `<td class="${d.date === todayIso ? 'today-column' : ''}"></td>`).join('')}
@@ -1835,7 +2100,11 @@ function renderCalendar() {
       }
 
       h += `
-        <tr>
+        <tr
+          class="calendar-item-row"
+          data-category="${esc(cat)}"
+          data-item-name="${esc(it.name)}"
+        >
           <td class="item-col">${esc(it.name)}</td>
           <td class="unit-col">${esc(it.unit || '')}</td>
           <td class="price-col">
@@ -1977,6 +2246,16 @@ function renderCalendar() {
     .forEach(i =>
       i.addEventListener('change', saveQty)
     );
+
+  document
+    .querySelectorAll('#calendarTable .section-row')
+    .forEach(row => {
+      row.addEventListener('click', () =>
+        toggleCalendarCategory(row.dataset.category || '')
+      );
+    });
+
+  applyCalendarViewFilters();
 
   renderMonthlyRecurringDisplay();
   updateSummary();
@@ -2778,6 +3057,37 @@ window.editItem=id=>{const it=allItems.find(i=>i.id===id);if(!it)return;editingI
 window.deactivateItem=async id=>{if(!confirm('Deactivate this item? It will disappear from new entries, but existing charge records stay untouched.'))return;const {error}=await sb.from('items').update({active:false}).eq('id',id);if(error)return toast(error.message);await loadItems();await loadAllItems();renderSelectors();renderCalendar();toast('Item deactivated')};
 window.reactivateItem=async id=>{const {error}=await sb.from('items').update({active:true}).eq('id',id);if(error)return toast(error.message);await loadItems();await loadAllItems();renderSelectors();renderCalendar();toast('Item reactivated')};
 function renderItemList(){$('itemList').innerHTML=allItems.length?allItems.map(i=>`<div class="row"><div><strong>${esc(i.name)}</strong><br><small>${esc(i.category||'')} · ${esc(i.unit||'—')} · RM ${Number(i.price||0).toFixed(2)}</small></div><span class="badge" style="${i.active?'':'background:#fff0ef;color:var(--red)'}">${i.active?'ACTIVE':'INACTIVE'}</span><div style="display:flex;gap:6px"><button class="btn btn-light btn-compact" style="border:1px solid var(--border)" onclick="editItem('${i.id}')">Edit</button>${i.active?`<button class="btn btn-danger btn-compact" onclick="deactivateItem('${i.id}')">Deactivate</button>`:`<button class="btn btn-primary btn-compact" onclick="reactivateItem('${i.id}')">Reactivate</button>`}</div></div>`).join(''):'<div class="row"><small>No items yet.</small></div>'}
+
+
+const calendarItemSearchEl = $('calendarItemSearch');
+
+if (calendarItemSearchEl) {
+  calendarItemSearchEl.addEventListener('input', () => {
+    calendarItemSearchText = calendarItemSearchEl.value || '';
+    applyCalendarViewFilters();
+  });
+}
+
+$('calendarSearchClearBtn')?.addEventListener('click', () => {
+  calendarItemSearchText = '';
+
+  if (calendarItemSearchEl) {
+    calendarItemSearchEl.value = '';
+    calendarItemSearchEl.focus();
+  }
+
+  applyCalendarViewFilters();
+});
+
+$('calendarExpandAllBtn')?.addEventListener(
+  'click',
+  expandAllCalendarCategories
+);
+
+$('calendarCollapseAllBtn')?.addEventListener(
+  'click',
+  collapseAllCalendarCategories
+);
 
 $('exportBtn').onclick = () => {
 
