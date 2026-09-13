@@ -1811,6 +1811,35 @@ th{
   }
 }
 
+
+/* =========================================================
+   v49 — One-time Mobile Install Prompt
+   ========================================================= */
+.install-prompt-benefits{
+  display:grid;
+  gap:8px;
+  margin-top:12px;
+}
+.install-prompt-benefit{
+  display:flex;
+  align-items:flex-start;
+  gap:9px;
+  padding:9px 10px;
+  border:1px solid #e1ece8;
+  border-radius:11px;
+  background:#f8fbfa;
+  color:#506a63;
+  font-size:12px;
+}
+.install-prompt-benefit span:first-child{
+  width:22px;height:22px;flex:0 0 auto;
+  display:grid;place-items:center;
+  border-radius:7px;
+  background:#e8f6f1;
+  color:var(--green2);
+  font-weight:900;
+}
+
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -3382,6 +3411,8 @@ async function enterApp(user){
   } else {
     setChargesDisplayMode('calendar');
   }
+
+  setTimeout(maybeShowMobileInstallPopup,850);
 }
 async function loadResidents(){const {data,error}=await sb.from('residents').select('*').eq('active',true).eq('branch_id',currentBranchId).order('name');if(error)throw error;residents=data||[]}
 async function loadItems(){const {data,error}=await sb.from('items').select('*').eq('active',true).eq('branch_id',currentBranchId).order('sort_order').order('name');if(error)throw error;items=data||[]}
@@ -8597,6 +8628,82 @@ $('itemListSearch')?.addEventListener('input', applyItemListSearch);
 
 // ---------- v48 unified mobile navigation + install ----------
 let deferredInstallPrompt = null;
+const INSTALL_POPUP_SEEN_KEY='mintygreenInstallPopupSeenV49';
+let installPopupInProgress=false;
+
+function isPhoneViewport(){
+  return window.matchMedia('(max-width: 850px)').matches;
+}
+
+function hasSeenInstallPopup(){
+  try{return localStorage.getItem(INSTALL_POPUP_SEEN_KEY)==='1'}catch(e){return false}
+}
+
+function markInstallPopupSeen(){
+  try{localStorage.setItem(INSTALL_POPUP_SEEN_KEY,'1')}catch(e){}
+}
+
+async function maybeShowMobileInstallPopup(){
+  if(installPopupInProgress) return;
+  if(!isPhoneViewport()) return;
+  if(isStandaloneApp()) return;
+  if(hasSeenInstallPopup()) return;
+  if(!currentUser) return;
+  if($('appView')?.classList.contains('hidden')) return;
+
+  // On Chromium/Android, wait for the browser's install event so the
+  // Install button can launch the native install sheet immediately.
+  if(!deferredInstallPrompt){
+    // iPhone/iPad browsers do not expose beforeinstallprompt.
+    const isiOS=/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+    if(!isiOS) return;
+
+    installPopupInProgress=true;
+    const result=await openAppModal({
+      title:'Install Mintygreen Charges',
+      message:'Add Mintygreen Charges to your Home Screen for faster access and a full-screen app experience.\n\nOn iPhone/iPad: tap the browser Share button, then choose “Add to Home Screen”.',
+      confirmText:'Got it',
+      cancelText:'Not now'
+    });
+    markInstallPopupSeen();
+    installPopupInProgress=false;
+    return;
+  }
+
+  installPopupInProgress=true;
+
+  const result=await openAppModal({
+    title:'Install Mintygreen Charges',
+    message:'Would you like to install Mintygreen Charges on this phone? It will open like an app while using the same secure account and billing system.',
+    confirmText:'Install App',
+    cancelText:'Not now',
+    customHtml:`
+      <div class="install-prompt-benefits">
+        <div class="install-prompt-benefit"><span>✓</span><div><strong>Faster access</strong><br>Open directly from your Home Screen.</div></div>
+        <div class="install-prompt-benefit"><span>✓</span><div><strong>App-style view</strong><br>No browser address bar while using the system.</div></div>
+        <div class="install-prompt-benefit"><span>✓</span><div><strong>Same secure system</strong><br>Your login, permissions and billing data remain unchanged.</div></div>
+      </div>`
+  });
+
+  // Show only once automatically on this browser. The user can still
+  // install later from Account → Install App.
+  markInstallPopupSeen();
+  installPopupInProgress=false;
+
+  if(!result.confirmed) return;
+  if(!deferredInstallPrompt) return;
+
+  deferredInstallPrompt.prompt();
+  const choice=await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt=null;
+  refreshInstallAppAction();
+
+  if(choice?.outcome==='accepted'){
+    toast('Installing Mintygreen Charges…');
+  }
+}
+
 
 function isStandaloneApp(){
   return window.matchMedia('(display-mode: standalone)').matches ||
@@ -8678,10 +8785,12 @@ window.addEventListener('beforeinstallprompt',e=>{
   e.preventDefault();
   deferredInstallPrompt=e;
   refreshInstallAppAction();
+  setTimeout(maybeShowMobileInstallPopup,650);
 });
 
 window.addEventListener('appinstalled',()=>{
   deferredInstallPrompt=null;
+  markInstallPopupSeen();
   refreshInstallAppAction();
   toast('Mintygreen Charges installed');
 });
