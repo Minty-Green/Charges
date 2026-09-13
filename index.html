@@ -8227,21 +8227,42 @@ $('cycleLockBtn').onclick = async () => {
       return;
     }
 
-    const { error } = await sb
+    const { data: existingCycle, error: existingCycleError } = await sb
       .from('billing_cycles')
-      .upsert({
-        billing_month: month,
-        branch_id: currentBranchId,
-        resident_id: residentId,
-        cycle_start: cycle.start,
-        cycle_end: cycle.end,
-        is_locked: true,
-        locked_at: new Date().toISOString(),
-        locked_by: currentUser.id,
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'billing_month,branch_id,resident_id'
-      });
+      .select('id')
+      .eq('billing_month', month)
+      .eq('branch_id', currentBranchId)
+      .eq('resident_id', residentId)
+      .maybeSingle();
+
+    if (existingCycleError) {
+      return toast(existingCycleError.message);
+    }
+
+    const lockPayload = {
+      billing_month: month,
+      branch_id: currentBranchId,
+      resident_id: residentId,
+      cycle_start: cycle.start,
+      cycle_end: cycle.end,
+      is_locked: true,
+      locked_at: new Date().toISOString(),
+      locked_by: currentUser.id,
+      updated_at: new Date().toISOString()
+    };
+
+    let error = null;
+
+    if (existingCycle?.id) {
+      ({ error } = await sb
+        .from('billing_cycles')
+        .update(lockPayload)
+        .eq('id', existingCycle.id));
+    } else {
+      ({ error } = await sb
+        .from('billing_cycles')
+        .insert(lockPayload));
+    }
 
     if (error) {
       return toast(error.message);
