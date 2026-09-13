@@ -22,7 +22,14 @@
     .topbar{position:sticky;top:0;z-index:30;background:var(--green2);color:#fff;padding:12px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 12px rgba(0,0,0,.12)}
     .topbar-logo-wrap{background:transparent;border-radius:9px;padding:5px 7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:none}
     .topbar-logo{height:24px;width:auto;display:block}
-    .brand{font-weight:850}.brand small{display:block;font-weight:500;opacity:.8;font-size:11px}.spacer{flex:1}.user-chip{font-size:12px;opacity:.9}.btn{border:0;border-radius:9px;padding:10px 13px;font-weight:750;cursor:pointer}.btn-primary{background:var(--green);color:white}.btn-light{background:white;color:var(--green2)}.btn-ghost{background:transparent;color:inherit;border:1px solid currentColor}.btn-danger{background:#fff0ef;color:var(--red);border:1px solid #efc8c4}
+    .brand{font-weight:850}.brand small{display:block;font-weight:500;opacity:.8;font-size:11px}.spacer{flex:1}.user-chip{font-size:12px;opacity:.95;display:flex;flex-direction:column;line-height:1.15;max-width:220px}
+.user-chip strong{font-size:12px;color:#fff}
+.user-chip small{font-size:10px;color:rgba(255,255,255,.82);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-identity{line-height:1.25}
+.user-identity strong{display:block;font-size:12px;color:var(--text)}
+.user-identity a{display:block;font-size:11px;color:var(--green);text-decoration:none;word-break:break-all}
+.user-identity a:hover{text-decoration:underline}
+.user-identity .user-id{display:block;font-size:9px;color:var(--muted);margin-top:2px}.btn{border:0;border-radius:9px;padding:10px 13px;font-weight:750;cursor:pointer}.btn-primary{background:var(--green);color:white}.btn-light{background:white;color:var(--green2)}.btn-ghost{background:transparent;color:inherit;border:1px solid currentColor}.btn-danger{background:#fff0ef;color:var(--red);border:1px solid #efc8c4}
     .wrap{max-width:1550px;margin:18px auto;padding:0 16px}.card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow)}
     .login{max-width:420px;margin:10vh auto;padding:26px}.login h1{margin:0 0 5px}.sub{color:var(--muted);font-size:13px;margin-bottom:20px}.field{margin-bottom:14px}.field label{display:block;font-size:12px;font-weight:800;margin-bottom:6px}.field input,.field select,.toolbar select,.toolbar input{width:100%;border:1px solid #c9d5d1;border-radius:9px;padding:10px 11px;background:white;outline:none}.field input:focus,.field select:focus,.toolbar select:focus,.toolbar input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(23,107,91,.1)}
     .toolbar{padding:14px;display:grid;grid-template-columns:minmax(280px,380px) 190px 110px auto auto auto;gap:10px;align-items:end;margin-bottom:12px}.toolbar .tfield label{display:block;font-size:11px;font-weight:800;color:var(--muted);margin-bottom:5px}
@@ -862,7 +869,7 @@
           <div class="card panel">
             <h3>Add Staff</h3>
             <p class="note">Add a login for someone on your team. They'll use the email/password you set here to sign in.</p>
-            <div class="field"><label>Full Name</label><input id="newStaffName" placeholder="e.g. Aina binti Kassim"></div>
+            <div class="field"><label>Display Name / Full Name</label><input id="newStaffName" placeholder="e.g. Aina binti Kassim"></div>
             <div class="field"><label>Email</label><input id="newStaffEmail" type="email" placeholder="staff@example.com"></div>
             <div class="field"><label>Temporary Password</label><input id="newStaffPassword" type="text" placeholder="Set a temporary password"></div>
             <div class="field superadmin-only hidden" id="staffBranchField"><label>Branch</label><select id="newStaffBranch"></select></div>
@@ -992,15 +999,14 @@
         <thead>
           <tr>
             <th>Date / Time</th>
-            <th>Email</th>
-            <th>User ID</th>
+            <th>User</th>
             <th>Result</th>
             <th>Reason</th>
           </tr>
         </thead>
         <tbody id="loginActivityTableBody">
           <tr>
-            <td colspan="5">Open this tab to load the latest login activity.</td>
+            <td colspan="4">Open this tab to load the latest login activity.</td>
           </tr>
         </tbody>
       </table>
@@ -1049,6 +1055,15 @@
 <section id="settingsTab" class="hidden">
   <div class="settings-grid">
     <div class="card security-card">
+      <h3>Account Profile</h3>
+      <p class="note">This name is shown in Audit History, Login Activity, Backups and other staff activity views. Your email remains your sign-in account.</p>
+      <div class="field"><label>Display Name / Username</label><input id="settingsDisplayName" type="text" maxlength="80" placeholder="e.g. Mohammed Safia"></div>
+      <div class="field"><label>Linked Email</label><input id="settingsProfileEmail" type="email" disabled></div>
+      <button id="changeDisplayNameBtn" class="btn btn-primary">Save Display Name</button>
+      <p id="changeDisplayNameMsg" class="note"></p>
+    </div>
+
+    <div class="card security-card">
       <h3>Account Email</h3>
       <p class="note">Change the email used to sign in. For security, Supabase may send confirmation links before the change takes effect.</p>
       <div class="field"><label>Current Email</label><input id="settingsCurrentEmail" type="email" disabled></div>
@@ -1086,7 +1101,7 @@ const INITIAL_IS_PASSWORD_RECOVERY =
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const $=id=>document.getElementById(id);
-let currentUser=null,residents=[],items=[],allItems=[],editingItemId=null,entries=[],recurring=[],currentUserRole='staff',currentCycleLocked=false,saveTimer=null;
+let currentUser=null,residents=[],items=[],allItems=[],editingItemId=null,entries=[],recurring=[],currentUserRole='staff',currentUserDisplayName='',currentCycleLocked=false,saveTimer=null;
 let currentUserBranchId=null,currentBranchId=null,branches=[];
 let recurringOverrides = [];
 let recurringPriceHistory = [];
@@ -1460,6 +1475,48 @@ $('loginMsg').textContent = 'Password created successfully.';
 await enterApp(data.user);
 };
 
+
+$('changeDisplayNameBtn').onclick=async()=>{
+  const btn=$('changeDisplayNameBtn');
+  const newName=($('settingsDisplayName')?.value||'').trim();
+  setSettingsMessage('changeDisplayNameMsg','');
+
+  if(!newName){
+    setSettingsMessage('changeDisplayNameMsg','Please enter a display name.');
+    return;
+  }
+
+  if(newName.length>80){
+    setSettingsMessage('changeDisplayNameMsg','Display name must be 80 characters or fewer.');
+    return;
+  }
+
+  const originalText=btn.textContent;
+  btn.disabled=true;
+  btn.textContent='Saving…';
+
+  const {error}=await sb.rpc('set_my_display_name',{
+    new_display_name:newName
+  });
+
+  btn.disabled=false;
+  btn.textContent=originalText;
+
+  if(error){
+    setSettingsMessage('changeDisplayNameMsg',error.message);
+    return;
+  }
+
+  currentUserDisplayName=newName;
+  updateCurrentUserIdentityUI();
+  setSettingsMessage('changeDisplayNameMsg','✓ Display name updated successfully.',true);
+  toast('Display name updated');
+
+  // Refresh any identity-based admin view that is currently open.
+  if(!$('staffTab')?.classList.contains('hidden')) loadStaffList();
+  if(!$('backupsTab')?.classList.contains('hidden')) loadBackupsList();
+};
+
 $('changeEmailBtn').onclick=async()=>{
   const newEmail=$('settingsNewEmail').value.trim();
   const btn=$('changeEmailBtn');
@@ -1609,7 +1666,7 @@ async function enterApp(user){
   await recordPendingLoginSuccess(user);
   await loadCurrentUserRole();
   await loadBranchContext();
-  $('userEmail').textContent=user.email;if($('settingsCurrentEmail'))$('settingsCurrentEmail').value=user.email||'';$('loginView').classList.add('hidden');$('appView').classList.remove('hidden');await Promise.all([loadResidents(),loadItems()]);renderSelectors();renderResidentList();renderBranchList();await loadRecurring();renderCalendar();
+  updateCurrentUserIdentityUI();$('loginView').classList.add('hidden');$('appView').classList.remove('hidden');await Promise.all([loadResidents(),loadItems()]);renderSelectors();renderResidentList();renderBranchList();await loadRecurring();renderCalendar();
 
   if (window.matchMedia('(max-width: 700px)').matches) {
     chargesDisplayMode='daily';
@@ -5332,19 +5389,19 @@ async function loadBackupsList() {
   }
 
   const userIds = [...new Set(backups.map(b => b.created_by).filter(Boolean))];
-  const emailById = {};
+  const profileById = {};
 
   if (userIds.length) {
 
     const { data: profileData, error: profileError } = await sb
       .from('profiles')
-      .select('id,email')
+      .select('id,email,display_name')
       .in('id', userIds);
 
     if (profileError) {
-      console.error('Could not load staff emails:', profileError);
+      console.error('Could not load staff identities:', profileError);
     } else {
-      (profileData || []).forEach(p => { emailById[p.id] = p.email || p.id; });
+      (profileData || []).forEach(p => { profileById[p.id] = p; });
     }
   }
 
@@ -5356,14 +5413,15 @@ async function loadBackupsList() {
       day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
     });
 
-    const who = emailById[b.created_by] || '-';
+    const who = profileById[b.created_by] || null;
 
     return `
       <div class="row">
         <div>
           <strong>${esc(b.label)}</strong>
           <br>
-          <small>${esc(when)} · by ${esc(who)}</small>
+          <small>${esc(when)}</small>
+          <div style="margin-top:4px">${who ? renderUserIdentity(who.display_name, who.email, who.id) : '<small>Created by: Unknown user</small>'}</div>
         </div>
         <button class="btn btn-light" style="border:1px solid var(--border)" onclick="window.restoreBackupFlow('${b.id}')">Restore</button>
       </div>
@@ -5574,8 +5632,9 @@ document
 
       // Settings behavior
       if (requestedTab === 'settings' && currentUser) {
-        $('settingsCurrentEmail').value = currentUser.email || '';
+        updateCurrentUserIdentityUI();
         $('settingsNewEmail').value = '';
+        $('changeDisplayNameMsg').textContent = '';
         $('changeEmailMsg').textContent = '';
         $('changePasswordMsg').textContent = '';
       }
@@ -5589,6 +5648,40 @@ document
 
   });
   function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+
+function fallbackDisplayName(email=''){
+  const local = String(email || '').split('@')[0].replace(/[._-]+/g,' ').trim();
+  return local
+    ? local.replace(/\b\w/g, c => c.toUpperCase())
+    : 'Unknown user';
+}
+
+function renderUserIdentity(displayName, email, userId='', {showId=false} = {}){
+  const cleanEmail = String(email || '').trim();
+  const cleanName = String(displayName || '').trim() || (cleanEmail ? fallbackDisplayName(cleanEmail) : 'Unknown user');
+  const emailLine = cleanEmail
+    ? `<a href="mailto:${esc(cleanEmail)}">${esc(cleanEmail)}</a>`
+    : '<span style="font-size:11px;color:var(--muted)">No linked email</span>';
+  const idLine = showId && userId
+    ? `<span class="user-id">${esc(userId)}</span>`
+    : '';
+
+  return `<div class="user-identity"><strong>${esc(cleanName)}</strong>${emailLine}${idLine}</div>`;
+}
+
+function updateCurrentUserIdentityUI(){
+  if(!currentUser) return;
+  const name = currentUserDisplayName || fallbackDisplayName(currentUser.email || '');
+  const chip = $('userEmail');
+  if(chip){
+    chip.innerHTML = `<strong>${esc(name)}</strong><small>${esc(currentUser.email || '')}</small>`;
+    chip.title = currentUser.email || '';
+  }
+  if($('settingsDisplayName')) $('settingsDisplayName').value = name;
+  if($('settingsProfileEmail')) $('settingsProfileEmail').value = currentUser.email || '';
+  if($('settingsCurrentEmail')) $('settingsCurrentEmail').value = currentUser.email || '';
+}
+
 async function loadCurrentUserRole() {
 
   if (!currentUser) {
@@ -5598,7 +5691,7 @@ async function loadCurrentUserRole() {
 
   const { data, error } = await sb
     .from('profiles')
-    .select('role, branch_id')
+    .select('role, branch_id, display_name, email')
     .eq('id', currentUser.id)
     .single();
 
@@ -5610,7 +5703,11 @@ async function loadCurrentUserRole() {
 
   currentUserRole = data?.role || 'staff';
   currentUserBranchId = data?.branch_id || null;
+  currentUserDisplayName =
+    (data?.display_name || '').trim() ||
+    fallbackDisplayName(data?.email || currentUser?.email || '');
 
+  updateCurrentUserIdentityUI();
   applyRoleAccess();
 }
 async function loadBranchContext() {
@@ -5834,7 +5931,7 @@ async function loadStaffList() {
 
   let query = sb
     .from('profiles')
-    .select('id,email,role,branch_id,password_setup_complete')
+    .select('id,email,display_name,role,branch_id,password_setup_complete')
     .order('email', { ascending: true });
 
   if (currentUserRole === 'admin' && currentBranchId) {
@@ -5877,8 +5974,7 @@ async function loadStaffList() {
     return `
       <div class="row" style="grid-template-columns:1fr auto">
         <div>
-          <strong>${esc(p.email || 'Staff')}</strong><br>
-          <small>${esc(p.email || '-')}</small><br>
+          ${renderUserIdentity(p.display_name, p.email, p.id)}
           <small>${esc(branchName)} · ${esc(roleLabel)}</small>
         </div>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
@@ -6202,7 +6298,7 @@ async function loadLoginActivity() {
 
   if (!body) return;
 
-  body.innerHTML = '<tr><td colspan="5">Loading…</td></tr>';
+  body.innerHTML = '<tr><td colspan="4">Loading…</td></tr>';
   if (status) status.textContent = '';
 
   let query = sb
@@ -6226,19 +6322,54 @@ async function loadLoginActivity() {
 
   if (error) {
     console.error('Could not load login activity:', error);
-    body.innerHTML = `<tr><td colspan="5">${esc(error.message)}</td></tr>`;
+    body.innerHTML = `<tr><td colspan="4">${esc(error.message)}</td></tr>`;
     if (status) status.textContent = 'Could not load login activity.';
     return;
   }
 
   const rows = data || [];
 
+  const loginUserIds = [...new Set(rows.map(r => r.user_id).filter(Boolean))];
+  const loginEmails = [...new Set(
+    rows.map(r => (r.attempted_email || '').trim().toLowerCase()).filter(Boolean)
+  )];
+
+  const loginProfileById = {};
+  const loginProfileByEmail = {};
+
+  if (loginUserIds.length || loginEmails.length) {
+    let profilesQuery = sb
+      .from('profiles')
+      .select('id,email,display_name');
+
+    if (loginUserIds.length && loginEmails.length) {
+      const idList = loginUserIds.map(id => `"${id}"`).join(',');
+      const emailList = loginEmails.map(email => `"${email.replace(/"/g,'')}"`).join(',');
+      profilesQuery = profilesQuery.or(`id.in.(${idList}),email.in.(${emailList})`);
+    } else if (loginUserIds.length) {
+      profilesQuery = profilesQuery.in('id', loginUserIds);
+    } else {
+      profilesQuery = profilesQuery.in('email', loginEmails);
+    }
+
+    const {data: loginProfiles, error: loginProfilesError} = await profilesQuery;
+
+    if(loginProfilesError){
+      console.error('Could not load login user identities:', loginProfilesError);
+    }else{
+      (loginProfiles || []).forEach(p => {
+        loginProfileById[p.id] = p;
+        if(p.email) loginProfileByEmail[p.email.toLowerCase()] = p;
+      });
+    }
+  }
+
   if (status) {
     status.textContent = `${rows.length} record${rows.length === 1 ? '' : 's'} loaded.`;
   }
 
   if (!rows.length) {
-    body.innerHTML = '<tr><td colspan="5">No matching login activity found.</td></tr>';
+    body.innerHTML = '<tr><td colspan="4">No matching login activity found.</td></tr>';
     return;
   }
 
@@ -6251,11 +6382,30 @@ async function loadLoginActivity() {
       ? '<span class="badge" style="background:#dcfce7;color:#166534">SUCCESS</span>'
       : '<span class="badge" style="background:#fee2e2;color:#991b1b">FAILED</span>';
 
+    const emailKey = (row.attempted_email || '').trim().toLowerCase();
+    const profile =
+      (row.user_id && loginProfileById[row.user_id]) ||
+      loginProfileByEmail[emailKey] ||
+      null;
+
+    const identityHtml = profile
+      ? renderUserIdentity(
+          profile.display_name,
+          profile.email || row.attempted_email,
+          row.user_id || profile.id,
+          {showId:true}
+        )
+      : renderUserIdentity(
+          'Unknown user',
+          row.attempted_email || '',
+          row.user_id || '',
+          {showId:true}
+        );
+
     return `
       <tr>
         <td>${esc(dt)}</td>
-        <td>${esc(row.attempted_email || '-')}</td>
-        <td><small>${esc(row.user_id || '-')}</small></td>
+        <td>${identityHtml}</td>
         <td>${resultBadge}</td>
         <td>${esc(row.failure_reason || '-')}</td>
       </tr>
@@ -6423,7 +6573,7 @@ const userIds = [
   )
 ];
 
-const emailById = {};
+const profileByChangedUserId = {};
 
 if (userIds.length) {
 
@@ -6432,23 +6582,20 @@ if (userIds.length) {
     error: profileError
   } = await sb
     .from('profiles')
-    .select('id,email')
+    .select('id,email,display_name')
     .in('id', userIds);
 
   if (profileError) {
 
     console.error(
-      'Could not load staff emails:',
+      'Could not load staff identities:',
       profileError
     );
 
   } else {
 
     (profileData || []).forEach(profile => {
-
-      emailById[profile.id] =
-        profile.email || profile.id;
-
+      profileByChangedUserId[profile.id] = profile;
     });
 
   }
@@ -6604,11 +6751,19 @@ log.action.includes('CREATED')
           </td>
 
           <td>
-${esc(
-  emailById[log.changed_by] ||
-  log.changed_by ||
-  '-'
-)}
+            ${
+              profileByChangedUserId[log.changed_by]
+                ? renderUserIdentity(
+                    profileByChangedUserId[log.changed_by].display_name,
+                    profileByChangedUserId[log.changed_by].email,
+                    log.changed_by
+                  )
+                : renderUserIdentity(
+                    'Unknown user',
+                    '',
+                    log.changed_by || ''
+                  )
+            }
           </td>
 
         </tr>
@@ -6636,8 +6791,7 @@ sb.auth.onAuthStateChange((event,session)=>{
   }
   if(event==='USER_UPDATED' && session?.user && currentUser){
     currentUser=session.user;
-    if($('userEmail')) $('userEmail').textContent=currentUser.email||'';
-    if($('settingsCurrentEmail')) $('settingsCurrentEmail').value=currentUser.email||'';
+    updateCurrentUserIdentityUI();
   }
 });
 
