@@ -1635,6 +1635,182 @@ th{
   .auth-transition-spinner{animation:none}
 }
 
+
+/* =========================================================
+   v48 — Unified Installable App
+   One responsive app for desktop + phone.
+   ========================================================= */
+.mobile-nav-trigger{
+  display:none;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  min-width:44px;
+  min-height:42px;
+  padding:7px 10px;
+  border:1px solid rgba(255,255,255,.20);
+  background:rgba(255,255,255,.10);
+  color:#fff;
+  border-radius:11px;
+  font-weight:850;
+  cursor:pointer;
+}
+.mobile-nav-trigger:hover{background:rgba(255,255,255,.16)}
+.mobile-nav-trigger-icon{
+  width:18px;height:14px;position:relative;display:block;
+  border-top:2px solid currentColor;border-bottom:2px solid currentColor;
+}
+.mobile-nav-trigger-icon:after{
+  content:"";position:absolute;left:0;right:0;top:5px;border-top:2px solid currentColor;
+}
+
+.mobile-nav-backdrop{
+  position:fixed;inset:0;z-index:8998;
+  background:rgba(8,32,27,.46);
+  backdrop-filter:blur(2px);
+  opacity:1;
+  transition:opacity .18s ease;
+}
+.mobile-nav-backdrop.hidden{display:none}
+.mobile-nav-drawer{
+  position:fixed;
+  left:0;top:0;bottom:0;
+  width:min(330px,88vw);
+  z-index:8999;
+  background:#fff;
+  box-shadow:18px 0 55px rgba(5,32,27,.24);
+  transform:translateX(0);
+  transition:transform .22s ease;
+  display:flex;
+  flex-direction:column;
+}
+.mobile-nav-drawer.hidden{
+  display:flex;
+  transform:translateX(-105%);
+  pointer-events:none;
+}
+.mobile-nav-head{
+  padding:18px 16px 14px;
+  background:linear-gradient(135deg,var(--green2),var(--green));
+  color:#fff;
+}
+.mobile-nav-head-row{
+  display:flex;align-items:center;gap:10px;
+}
+.mobile-nav-logo{
+  width:34px;height:34px;object-fit:contain;
+  border-radius:9px;background:rgba(255,255,255,.10);
+  padding:4px;
+}
+.mobile-nav-brand{
+  min-width:0;flex:1;
+}
+.mobile-nav-brand strong{
+  display:block;font-size:15px;line-height:1.2;
+}
+.mobile-nav-brand small{
+  display:block;opacity:.75;margin-top:2px;font-size:10px;
+}
+.mobile-nav-close{
+  width:38px;height:38px;border:0;border-radius:10px;
+  background:rgba(255,255,255,.12);color:#fff;
+  font-size:24px;cursor:pointer;
+}
+.mobile-nav-profile{
+  margin-top:13px;
+  padding-top:11px;
+  border-top:1px solid rgba(255,255,255,.15);
+  font-size:11px;
+  opacity:.92;
+}
+.mobile-nav-list{
+  padding:11px;
+  overflow:auto;
+  flex:1;
+}
+.mobile-nav-group{
+  font-size:9px;font-weight:950;letter-spacing:.10em;
+  text-transform:uppercase;color:#8a9995;
+  padding:11px 10px 5px;
+}
+.mobile-nav-item{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  border:0;
+  background:transparent;
+  color:#3f5952;
+  border-radius:11px;
+  padding:11px 12px;
+  margin:2px 0;
+  min-height:46px;
+  font-weight:800;
+  text-align:left;
+  cursor:pointer;
+}
+.mobile-nav-item:hover{background:#f0f7f4}
+.mobile-nav-item.active{
+  background:#e9f6f1;
+  color:var(--green2);
+  box-shadow:inset 3px 0 0 var(--green);
+}
+.mobile-nav-item-arrow{opacity:.42}
+.mobile-nav-foot{
+  padding:12px 14px 16px;
+  border-top:1px solid var(--border);
+  color:#84928e;
+  font-size:9px;
+  line-height:1.5;
+}
+.install-app-action.hidden{display:none!important}
+
+@media(max-width:850px){
+  /* Main navigation becomes a drawer instead of a long horizontal strip. */
+  .wrap > .tabs{display:none!important}
+  .mobile-nav-trigger{display:inline-flex}
+  .wrap{
+    display:block!important;
+    max-width:100%!important;
+  }
+  .wrap > section{width:100%;min-width:0}
+
+  /* Let the top bar stay compact when installed as a phone app. */
+  .topbar{
+    position:sticky;
+    top:0;
+    z-index:8000;
+  }
+  .topbar .brand{
+    max-width:150px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .topbar .spacer{min-width:0}
+
+  /* Branch picker gets a friendlier phone width. */
+  #branchSwitcher{
+    max-width:150px;
+    min-width:112px;
+  }
+}
+
+@media(max-width:560px){
+  .mobile-nav-trigger .mobile-nav-trigger-label{display:none}
+  .mobile-nav-trigger{padding:7px 11px}
+  .topbar .brand{max-width:112px}
+  #activeBranchChip{display:none!important}
+  #branchSwitcher{max-width:126px}
+
+  /* Installed mobile app: preserve app-like safe spacing. */
+  @media(display-mode:standalone){
+    body{padding-bottom:env(safe-area-inset-bottom)}
+    .topbar{padding-top:max(9px,env(safe-area-inset-top))}
+  }
+}
+
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -1697,6 +1873,10 @@ th{
       <div class="brand">MG Bayan Lepas<small id="brandSubtitle">Mintygreen</small></div>
 <div class="spacer"></div>
 <select id="branchSwitcher" class="superadmin-only hidden" style="border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;border-radius:8px;padding:7px 9px;font-size:12px;font-weight:700"></select>
+<button id="mobileNavBtn" class="mobile-nav-trigger" type="button" aria-label="Open navigation menu" aria-expanded="false">
+  <span class="mobile-nav-trigger-icon" aria-hidden="true"></span>
+  <span class="mobile-nav-trigger-label">Menu</span>
+</button>
 <div id="themePicker" class="theme-picker">
   <button id="themeMenuBtn" class="theme-trigger" type="button" aria-expanded="false" title="Choose theme">
     <span id="themeTriggerDot" class="theme-dot"></span>
@@ -1727,10 +1907,28 @@ th{
       <span id="userRole" class="badge"></span>
     </div>
     <button id="accountSettingsBtn" class="account-menu-action" type="button">My Profile & Settings</button>
+    <button id="installAppBtn" class="account-menu-action install-app-action hidden" type="button">Install App</button>
     <button id="logoutBtn" class="account-menu-action danger" type="button">Log out</button>
   </div>
 </div>
     </header>
+
+    <div id="mobileNavBackdrop" class="mobile-nav-backdrop hidden" aria-hidden="true"></div>
+    <aside id="mobileNavDrawer" class="mobile-nav-drawer hidden" aria-hidden="true" aria-label="Application navigation">
+      <div class="mobile-nav-head">
+        <div class="mobile-nav-head-row">
+          <img src="logo.png?v=e5a4019a7248" alt="" class="mobile-nav-logo">
+          <div class="mobile-nav-brand">
+            <strong>Mintygreen Charges</strong>
+            <small id="mobileNavBranch">Monthly Charges</small>
+          </div>
+          <button id="mobileNavCloseBtn" class="mobile-nav-close" type="button" aria-label="Close navigation">×</button>
+        </div>
+        <div id="mobileNavProfile" class="mobile-nav-profile"></div>
+      </div>
+      <nav id="mobileNavList" class="mobile-nav-list"></nav>
+      <div class="mobile-nav-foot">MG Bayan Lepas · Mintygreen Healthcare<br>Navigation is automatically limited by your account role.</div>
+    </aside>
 
     <main class="wrap">
 <div class="tabs">
@@ -7225,6 +7423,7 @@ function updateCurrentUserIdentityUI(){
   if($('settingsDisplayName')) $('settingsDisplayName').value = name;
   if($('settingsProfileEmail')) $('settingsProfileEmail').value = currentUser.email || '';
   if($('settingsCurrentEmail')) $('settingsCurrentEmail').value = currentUser.email || '';
+  if(window.innerWidth<=850) syncMobileNav();
 }
 
 async function loadCurrentUserRole() {
@@ -8394,6 +8593,146 @@ init();
 
 $('residentListSearch')?.addEventListener('input', applyResidentListSearch);
 $('itemListSearch')?.addEventListener('input', applyItemListSearch);
+
+
+// ---------- v48 unified mobile navigation + install ----------
+let deferredInstallPrompt = null;
+
+function isStandaloneApp(){
+  return window.matchMedia('(display-mode: standalone)').matches ||
+         window.navigator.standalone === true;
+}
+
+function mobileNavGroupForTab(tabName){
+  if(['charges','recurring'].includes(tabName)) return 'Operations';
+  if(['setup','items','staff','branches'].includes(tabName)) return 'Management';
+  return 'System';
+}
+
+function syncMobileNav(){
+  const list=$('mobileNavList');
+  if(!list)return;
+
+  const originalTabs=[...document.querySelectorAll('.wrap > .tabs .tab')];
+  const visibleTabs=originalTabs.filter(btn=>{
+    if(btn.classList.contains('hidden')) return false;
+    return getComputedStyle(btn).display !== 'none';
+  });
+
+  let lastGroup='';
+  const activeTab=originalTabs.find(btn=>btn.classList.contains('active'))?.dataset.tab || '';
+
+  list.innerHTML=visibleTabs.map(btn=>{
+    const tabName=btn.dataset.tab||'';
+    const group=mobileNavGroupForTab(tabName);
+    const groupHtml=group!==lastGroup ? `<div class="mobile-nav-group">${esc(group)}</div>` : '';
+    lastGroup=group;
+    return `${groupHtml}<button type="button" class="mobile-nav-item${activeTab===tabName?' active':''}" data-mobile-tab="${esc(tabName)}">
+      <span>${esc((btn.textContent||'').trim())}</span><span class="mobile-nav-item-arrow">›</span>
+    </button>`;
+  }).join('');
+
+  list.querySelectorAll('[data-mobile-tab]').forEach(item=>{
+    item.addEventListener('click',()=>{
+      const tabName=item.dataset.mobileTab;
+      document.querySelector(`.wrap > .tabs .tab[data-tab="${tabName}"]`)?.click();
+      closeMobileNav();
+      setTimeout(syncMobileNav,20);
+    });
+  });
+
+  const name=(currentUserDisplayName||fallbackDisplayName(currentUser?.email||'')||'Account').trim();
+  const role=currentUserRole==='super_admin'?'Super Admin':currentUserRole==='admin'?'Branch Admin':'Staff';
+  if($('mobileNavProfile')) $('mobileNavProfile').innerHTML=`<strong>${esc(name)}</strong><br>${esc(role)}`;
+  const branchName=branches.find(b=>b.id===currentBranchId)?.name || $('brandSubtitle')?.textContent || 'Monthly Charges';
+  if($('mobileNavBranch')) $('mobileNavBranch').textContent=branchName;
+}
+
+function openMobileNav(){
+  syncMobileNav();
+  $('mobileNavBackdrop')?.classList.remove('hidden');
+  $('mobileNavDrawer')?.classList.remove('hidden');
+  $('mobileNavBackdrop')?.setAttribute('aria-hidden','false');
+  $('mobileNavDrawer')?.setAttribute('aria-hidden','false');
+  $('mobileNavBtn')?.setAttribute('aria-expanded','true');
+  document.body.style.overflow='hidden';
+}
+
+function closeMobileNav(){
+  $('mobileNavBackdrop')?.classList.add('hidden');
+  $('mobileNavDrawer')?.classList.add('hidden');
+  $('mobileNavBackdrop')?.setAttribute('aria-hidden','true');
+  $('mobileNavDrawer')?.setAttribute('aria-hidden','true');
+  $('mobileNavBtn')?.setAttribute('aria-expanded','false');
+  document.body.style.overflow='';
+}
+
+function refreshInstallAppAction(){
+  const btn=$('installAppBtn');
+  if(!btn)return;
+  const shouldShow=!isStandaloneApp() && !!deferredInstallPrompt;
+  btn.classList.toggle('hidden',!shouldShow);
+}
+
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();
+  deferredInstallPrompt=e;
+  refreshInstallAppAction();
+});
+
+window.addEventListener('appinstalled',()=>{
+  deferredInstallPrompt=null;
+  refreshInstallAppAction();
+  toast('Mintygreen Charges installed');
+});
+
+$('mobileNavBtn')?.addEventListener('click',openMobileNav);
+$('mobileNavCloseBtn')?.addEventListener('click',closeMobileNav);
+$('mobileNavBackdrop')?.addEventListener('click',closeMobileNav);
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape' && !$('mobileNavDrawer')?.classList.contains('hidden')) closeMobileNav();
+});
+
+$('installAppBtn')?.addEventListener('click',async()=>{
+  $('accountMenu')?.classList.add('hidden');
+
+  if(isStandaloneApp()){
+    deferredInstallPrompt=null;
+    refreshInstallAppAction();
+    return;
+  }
+
+  if(!deferredInstallPrompt){
+    await openAppModal({
+      title:'Install Mintygreen Charges',
+      message:'Open this website in your phone browser and choose “Add to Home screen” or “Install app” from the browser menu.',
+      confirmText:'Got it',
+      cancelText:'Close'
+    });
+    return;
+  }
+
+  deferredInstallPrompt.prompt();
+  const result=await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt=null;
+  refreshInstallAppAction();
+  if(result?.outcome==='accepted') toast('Installing Mintygreen Charges…');
+});
+
+// Keep mobile navigation in sync whenever desktop role visibility changes.
+const mobileNavObserver=new MutationObserver(()=>{
+  if(window.innerWidth<=850 && !$('mobileNavDrawer')?.classList.contains('hidden')) syncMobileNav();
+});
+document.querySelectorAll('.wrap > .tabs .tab').forEach(tab=>{
+  mobileNavObserver.observe(tab,{attributes:true,attributeFilter:['class','style']});
+});
+
+window.addEventListener('resize',()=>{
+  if(window.innerWidth>850) closeMobileNav();
+  refreshInstallAppAction();
+});
+
+refreshInstallAppAction();
 
 // v38 UI initialization
 addSidebarGroups();
