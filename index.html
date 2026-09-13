@@ -6003,11 +6003,31 @@ window.editStaffAccess = async id => {
     return;
   }
 
+  // Email stays linked to the Auth account and is intentionally not editable here.
+  // Super Admin can update the staff member's display name together with access settings.
+  const currentDisplayName = (staff.display_name || '').trim() || fallbackDisplayName(staff.email || '');
+  const displayNameAnswer = prompt(
+    `Edit staff profile\n\nLinked email (read only): ${staff.email || '-'}\n\nDisplay Name / Username:`,
+    currentDisplayName
+  );
+
+  if (displayNameAnswer === null) return;
+
+  const newDisplayName = displayNameAnswer.trim();
+  if (!newDisplayName) {
+    toast('Display name cannot be empty');
+    return;
+  }
+  if (newDisplayName.length > 80) {
+    toast('Display name must be 80 characters or fewer');
+    return;
+  }
+
   const branchOptions = branches.map((b, i) => `${i + 1}. ${b.name}`).join('\n');
   const currentBranchIndex = Math.max(0, branches.findIndex(b => b.id === staff.branch_id));
 
   const branchAnswer = prompt(
-    `Change branch for ${staff.email}\n\n${branchOptions}\n\nEnter branch number:`,
+    `Edit staff access for ${newDisplayName}\nLinked email (read only): ${staff.email || '-'}\n\n${branchOptions}\n\nEnter branch number:`,
     String(currentBranchIndex + 1)
   );
 
@@ -6038,6 +6058,7 @@ window.editStaffAccess = async id => {
   const { error } = await sb
     .from('profiles')
     .update({
+      display_name: newDisplayName,
       branch_id: selectedBranch.id,
       role: newRole
     })
@@ -6048,7 +6069,7 @@ window.editStaffAccess = async id => {
     return;
   }
 
-  toast('Staff access updated');
+  toast('Staff profile and access updated');
   await loadStaffList();
 };
 
