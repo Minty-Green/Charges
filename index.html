@@ -1296,14 +1296,23 @@ input:focus,select:focus,textarea:focus{
 
 
 /* v44 — compact admin load buttons */
-#auditLoadBtn,
-#loginActivityLoadBtn{
+#loadAuditBtn,
+#loadLoginActivityBtn{
   width:auto!important;
-  min-width:max-content;
-  white-space:nowrap;
+  min-width:max-content!important;
+  white-space:nowrap!important;
   justify-self:start;
-  padding-left:16px;
-  padding-right:16px;
+  padding-left:18px!important;
+  padding-right:18px!important;
+  line-height:1.2;
+}
+
+#loadAuditBtn{
+  min-width:165px!important;
+}
+
+#loadLoginActivityBtn{
+  min-width:170px!important;
 }
 
 </style>
