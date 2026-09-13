@@ -526,6 +526,319 @@
       background:#e7f3ef;
     }
 
+
+/* =========================================================
+   v38 — Professional UI Polish
+   Visual/UX improvements only. Billing calculations unchanged.
+   ========================================================= */
+:root{
+  --surface:#ffffff;
+  --surface-soft:#f7faf9;
+  --surface-mint:#f0f8f5;
+  --ink:#18332d;
+  --muted2:#72817d;
+  --shadow-soft:0 10px 30px rgba(21,72,61,.08);
+  --shadow-card:0 5px 18px rgba(20,63,55,.07);
+  --radius-lg:18px;
+  --radius-md:13px;
+}
+body{
+  background:
+    radial-gradient(circle at 90% 4%, rgba(63,160,132,.08), transparent 24rem),
+    #f5f8f7;
+  color:var(--ink);
+}
+.card{
+  border-radius:var(--radius-lg);
+  border:1px solid rgba(19,85,72,.10);
+  box-shadow:var(--shadow-card);
+}
+.btn{
+  border-radius:10px;
+  font-weight:750;
+  transition:transform .14s ease, box-shadow .14s ease, opacity .14s ease, background .14s ease;
+}
+.btn:hover:not(:disabled){transform:translateY(-1px)}
+.btn:active:not(:disabled){transform:translateY(0)}
+.btn-primary{box-shadow:0 6px 16px rgba(20,110,89,.16)}
+input,select,textarea{
+  border-radius:10px!important;
+  min-height:42px;
+  transition:border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+input:focus,select:focus,textarea:focus{
+  outline:none;
+  border-color:rgba(32,132,106,.65)!important;
+  box-shadow:0 0 0 4px rgba(50,151,123,.10);
+}
+.topbar{
+  padding:10px 18px;
+  min-height:66px;
+  background:linear-gradient(120deg,var(--green2),var(--green));
+  box-shadow:0 8px 30px rgba(18,74,62,.16);
+}
+.topbar .brand{letter-spacing:-.2px}
+.topbar .brand small{opacity:.75}
+.topbar select{min-height:36px!important}
+.app-account{position:relative}
+.account-trigger{
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.10);
+  color:#fff;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  padding:6px 9px 6px 7px;
+  border-radius:12px;
+  cursor:pointer;
+  min-width:174px;
+  text-align:left;
+}
+.account-trigger:hover{background:rgba(255,255,255,.16)}
+.account-avatar,.staff-avatar{
+  width:34px;height:34px;border-radius:50%;
+  display:grid;place-items:center;
+  flex:0 0 auto;
+  font-size:12px;font-weight:900;
+}
+.account-avatar{background:#fff;color:var(--green2)}
+.account-trigger-copy{min-width:0;flex:1}
+.account-trigger-name{display:block;font-size:12px;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.account-trigger-role{display:block;font-size:10px;opacity:.75;margin-top:1px}
+.account-chevron{font-size:12px;opacity:.75}
+.account-menu{
+  position:absolute;right:0;top:calc(100% + 8px);width:285px;
+  background:#fff;color:var(--ink);
+  border:1px solid var(--border);
+  border-radius:14px;
+  box-shadow:0 20px 50px rgba(10,49,41,.20);
+  padding:10px;z-index:100;
+}
+.account-menu.hidden{display:none}
+.account-menu-profile{padding:9px 10px 12px;border-bottom:1px solid var(--border);margin-bottom:7px}
+.account-menu-profile .user-chip{color:var(--ink);display:block}
+.account-menu-profile .badge{margin-top:7px}
+.account-menu-action{
+  width:100%;border:0;background:transparent;text-align:left;
+  border-radius:9px;padding:9px 10px;cursor:pointer;color:var(--ink);font-weight:700
+}
+.account-menu-action:hover{background:var(--surface-mint)}
+.account-menu-action.danger{color:var(--red)}
+
+.wrap{
+  max-width:1540px;
+  display:grid;
+  grid-template-columns:220px minmax(0,1fr);
+  gap:22px;
+  align-items:start;
+}
+.tabs{
+  grid-column:1;
+  position:sticky;
+  top:84px;
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  padding:12px;
+  border:1px solid rgba(19,85,72,.09);
+  border-radius:16px;
+  background:rgba(255,255,255,.90);
+  box-shadow:var(--shadow-card);
+  backdrop-filter:blur(10px);
+  align-self:start;
+  z-index:12;
+}
+.tabs .tab{
+  width:100%;
+  justify-content:flex-start;
+  text-align:left;
+  background:transparent;
+  color:#4b625c;
+  border:0;
+  padding:10px 11px;
+  box-shadow:none;
+}
+.tabs .tab:hover{background:#f1f7f5;color:var(--green2)}
+.tabs .tab.active{
+  background:linear-gradient(100deg,#e8f6f1,#f4fbf8);
+  color:var(--green2);
+  box-shadow:inset 3px 0 0 var(--green);
+}
+.nav-group-label{
+  color:#8a9995;font-size:9px;font-weight:900;letter-spacing:.11em;
+  padding:11px 10px 4px;text-transform:uppercase
+}
+.wrap > section{grid-column:2;min-width:0}
+.page-heading{
+  display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
+  margin:2px 2px 16px;
+}
+.page-heading-copy h1{font-size:24px;letter-spacing:-.5px;margin:0 0 4px;color:var(--ink)}
+.page-heading-copy p{margin:0;color:var(--muted2);font-size:13px;line-height:1.5}
+.page-heading-kicker{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:10px;font-weight:850;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--green);margin-bottom:5px
+}
+.panel>h3,.table-head h2{letter-spacing:-.25px;color:var(--ink)}
+.note,.status{color:var(--muted2)}
+
+.summary{gap:12px}
+.kpi{
+  position:relative;overflow:hidden;
+  min-height:100px;padding:17px 18px!important;
+}
+.kpi:before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:#b6dcd1
+}
+.kpi span{font-size:11px!important;letter-spacing:.02em;color:#647b75!important;font-weight:800!important}
+.kpi strong{font-size:22px!important;letter-spacing:-.5px}
+.kpi.kpi-grand{
+  background:linear-gradient(135deg,#ecf8f4,#fff);
+  border-color:rgba(25,126,101,.22);
+}
+.kpi.kpi-grand:before{background:var(--green)}
+.kpi.kpi-grand strong{font-size:27px!important;color:var(--green2)}
+.toolbar{
+  border-color:rgba(19,85,72,.12);
+}
+.toolbar-actions{
+  background:rgba(255,255,255,.72);
+}
+#cycleStatus.badge{padding:7px 10px;font-weight:900}
+.badge{
+  border-radius:999px!important;
+  letter-spacing:.02em;
+  font-size:10px!important;
+  font-weight:850!important;
+}
+.status-badge-success{background:#e9f8f0!important;color:#18744d!important}
+.status-badge-warning{background:#fff6df!important;color:#946200!important}
+.status-badge-danger{background:#fff0ef!important;color:#b33b35!important}
+.status-badge-info{background:#ebf4ff!important;color:#245f9e!important}
+
+.list .row{
+  border-radius:13px;
+  margin-bottom:7px;
+  border:1px solid rgba(19,85,72,.09);
+  background:#fff;
+}
+.staff-card{
+  display:grid!important;
+  grid-template-columns:1fr auto!important;
+  gap:12px!important;
+  padding:13px!important;
+}
+.staff-profile{display:flex;gap:11px;align-items:center;min-width:0}
+.staff-avatar{background:linear-gradient(135deg,#dff3ec,#f3faf8);color:var(--green2);border:1px solid #cfe7df}
+.staff-profile-main{min-width:0}
+.staff-name{font-weight:900;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.staff-email{font-size:11px;color:var(--muted2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.staff-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px;font-size:10px;color:#667b75}
+.staff-meta-dot{opacity:.45}
+.staff-actions{display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+.btn-subtle{background:#f6f9f8!important;color:#36554d!important;border:1px solid #dde9e5!important}
+.btn-subtle:hover{background:#edf6f2!important}
+.staff-empty,.polished-empty{
+  text-align:center;padding:30px 18px!important;background:linear-gradient(180deg,#fff,#f9fbfa)!important
+}
+.empty-icon{
+  width:44px;height:44px;border-radius:14px;background:#edf7f3;
+  display:grid;place-items:center;margin:0 auto 10px;font-size:20px
+}
+.empty-title{font-weight:900;margin-bottom:4px;color:var(--ink)}
+.empty-copy{color:var(--muted2);font-size:12px;line-height:1.5}
+
+.daily-item-row.has-quantity{
+  background:#f0faf6!important;
+  border-color:#bfe6d9!important;
+}
+.daily-summary-bar{
+  box-shadow:0 -7px 24px rgba(17,75,63,.10);
+  border-top:1px solid rgba(31,117,94,.10);
+}
+.daily-save-flash{color:#197a57!important;font-weight:800}
+.table-card{overflow:hidden}
+.calendar-tools{background:#fbfdfc}
+.calendar tbody tr:hover td{background-color:#f5faf8}
+.calendar .today-col{box-shadow:inset 2px 0 0 rgba(29,125,99,.30),inset -2px 0 0 rgba(29,125,99,.30)}
+
+.loading-skeleton{
+  position:relative;overflow:hidden;background:#eef3f1!important;color:transparent!important;
+  min-height:48px;border-radius:11px
+}
+.loading-skeleton:after{
+  content:"";position:absolute;inset:0;transform:translateX(-100%);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.65),transparent);
+  animation:skeletonSweep 1.3s infinite;
+}
+@keyframes skeletonSweep{100%{transform:translateX(100%)}}
+
+.app-modal-backdrop{
+  position:fixed;inset:0;background:rgba(9,35,30,.48);
+  display:grid;place-items:center;padding:18px;z-index:9999;
+  backdrop-filter:blur(3px);
+}
+.app-modal-backdrop.hidden{display:none}
+.app-modal{
+  width:min(520px,100%);
+  background:#fff;border:1px solid rgba(19,85,72,.10);
+  border-radius:18px;box-shadow:0 28px 80px rgba(5,33,27,.28);
+  overflow:hidden;animation:modalIn .15s ease-out;
+}
+@keyframes modalIn{from{transform:translateY(8px) scale(.985);opacity:.5}to{transform:none;opacity:1}}
+.app-modal-head{padding:19px 20px 10px}
+.app-modal-title{font-size:18px;font-weight:900;letter-spacing:-.3px;margin:0;color:var(--ink)}
+.app-modal-body{padding:4px 20px 18px;color:#5e726d;font-size:13px;line-height:1.6}
+.app-modal-message{white-space:pre-line;margin-bottom:13px}
+.app-modal-input{width:100%;font-size:14px}
+.app-modal-actions{display:flex;justify-content:flex-end;gap:8px;padding:13px 20px;background:#f8faf9;border-top:1px solid var(--border)}
+.app-modal-danger .app-modal-title{color:#a93631}
+.app-modal-danger .app-modal-head{background:#fff8f7}
+.app-modal-select-grid{display:grid;gap:12px}
+.app-modal-field label{display:block;font-size:11px;font-weight:850;color:#49645d;margin-bottom:5px}
+
+.toast{
+  border-radius:12px!important;
+  box-shadow:0 15px 40px rgba(5,35,29,.22)!important;
+}
+
+@media(max-width:1050px){
+  .wrap{grid-template-columns:190px minmax(0,1fr);gap:16px}
+}
+@media(max-width:850px){
+  .wrap{display:block}
+  .tabs{
+    position:sticky;top:76px;
+    flex-direction:row;
+    overflow-x:auto;
+    border-radius:12px;
+    padding:7px;
+    margin-bottom:14px;
+    -webkit-overflow-scrolling:touch;
+  }
+  .tabs .tab{width:auto;min-width:max-content;padding:8px 10px}
+  .nav-group-label{display:none}
+  .page-heading{margin-top:10px}
+  .page-heading-copy h1{font-size:21px}
+  .account-trigger{min-width:0}
+  .account-trigger-copy{display:none}
+  .account-menu{position:fixed;right:12px;top:70px;width:min(310px,calc(100vw - 24px))}
+  .staff-card{grid-template-columns:1fr!important}
+  .staff-actions{justify-content:flex-start}
+}
+@media(max-width:560px){
+  .topbar{padding:9px 11px}
+  .topbar-logo{height:21px}
+  .topbar .brand{font-size:13px}
+  #themeSelect{display:none}
+  .page-heading-copy p{font-size:12px}
+  .summary{grid-template-columns:1fr 1fr!important}
+  .kpi{min-height:90px}
+  .kpi strong{font-size:18px!important}
+  .kpi.kpi-grand strong{font-size:21px!important}
+}
+
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -595,8 +908,24 @@
   <option value="amber" style="background:#8a4f0f;color:#fff">Warm Amber</option>
 </select>
 <span id="activeBranchChip" class="badge" style="background:rgba(255,255,255,.15);color:#fff;margin-right:6px"></span>
-<span id="userEmail" class="user-chip"></span><span id="userRole" class="badge"></span>
-      <button id="logoutBtn" class="btn btn-light">Log out</button>
+<div class="app-account">
+  <button id="accountMenuBtn" class="account-trigger" type="button" aria-expanded="false">
+    <span id="accountAvatar" class="account-avatar">MG</span>
+    <span class="account-trigger-copy">
+      <span id="accountButtonName" class="account-trigger-name">Account</span>
+      <span id="accountButtonRole" class="account-trigger-role">Staff</span>
+    </span>
+    <span class="account-chevron">⌄</span>
+  </button>
+  <div id="accountMenu" class="account-menu hidden">
+    <div class="account-menu-profile">
+      <span id="userEmail" class="user-chip"></span>
+      <span id="userRole" class="badge"></span>
+    </div>
+    <button id="accountSettingsBtn" class="account-menu-action" type="button">My Profile & Settings</button>
+    <button id="logoutBtn" class="account-menu-action danger" type="button">Log out</button>
+  </div>
+</div>
     </header>
 
     <main class="wrap">
@@ -761,7 +1090,7 @@
         <div class="summary">
           <div class="card kpi"><span>Stock / Usage Charges</span><strong id="usageTotal">RM 0.00</strong></div>
           <div class="card kpi"><span>Recurring Packages</span><strong id="recurringTotal">RM 0.00</strong></div>
-          <div class="card kpi"><span>Month Total</span><strong id="grandTotal">RM 0.00</strong></div>
+          <div class="card kpi kpi-grand"><span>Grand Total</span><strong id="grandTotal">RM 0.00</strong></div>
           <div class="card kpi"><span>Entries</span><strong id="entryCount">0</strong></div>
         </div>
         <div class="card table-card">
@@ -1087,6 +1416,23 @@
   </div>
   <div id="toast" class="toast hidden"></div>
 
+
+<div id="appModalBackdrop" class="app-modal-backdrop hidden" aria-hidden="true">
+  <div id="appModal" class="app-modal" role="dialog" aria-modal="true" aria-labelledby="appModalTitle">
+    <div class="app-modal-head">
+      <h2 id="appModalTitle" class="app-modal-title">Confirm</h2>
+    </div>
+    <div class="app-modal-body">
+      <div id="appModalMessage" class="app-modal-message"></div>
+      <div id="appModalCustom"></div>
+    </div>
+    <div class="app-modal-actions">
+      <button id="appModalCancel" class="btn btn-light" type="button" style="border:1px solid var(--border)">Cancel</button>
+      <button id="appModalConfirm" class="btn btn-primary" type="button">Confirm</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const SUPABASE_URL = 'https://qppkqopbtaswfwspjxsc.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_VpqWrjBfc0XoawJ8CGYrcw_GdGL4bPy';
@@ -1116,6 +1462,228 @@ const collapsedCalendarCategories = new Set();
 let turnstileWidgetId = null;
 let captchaToken = null;
 let passwordRecoveryMode = false;
+
+// ---------- v38 polished dialog + layout helpers ----------
+function initialsForName(name, email=''){
+  const source = (name || fallbackDisplayName(email || '') || 'MG').trim();
+  const parts = source.split(/\s+/).filter(Boolean);
+  return ((parts[0]?.[0] || 'M') + (parts.length > 1 ? (parts[parts.length - 1]?.[0] || '') : '')).toUpperCase();
+}
+
+function splitDialogMessage(message){
+  const raw = String(message || '').trim();
+  const parts = raw.split(/\n+/);
+  if(parts.length > 1 && parts[0].length <= 55){
+    return { title: parts[0].replace(/:$/, ''), body: parts.slice(1).join('\n').trim() };
+  }
+  if(parts.length === 1 && raw.length <= 55){
+    return { title: raw.replace(/:$/, ''), body: '' };
+  }
+  return { title: 'Please confirm', body: raw };
+}
+
+function openAppModal({title='Please confirm', message='', confirmText='Confirm', cancelText='Cancel', danger=false, input=false, value='', inputType='text', customHtml='' } = {}){
+  const backdrop = $('appModalBackdrop');
+  const modal = $('appModal');
+  const titleEl = $('appModalTitle');
+  const messageEl = $('appModalMessage');
+  const customEl = $('appModalCustom');
+  const cancelBtn = $('appModalCancel');
+  const confirmBtn = $('appModalConfirm');
+
+  titleEl.textContent = title;
+  messageEl.textContent = message || '';
+  messageEl.style.display = message ? '' : 'none';
+  cancelBtn.textContent = cancelText;
+  confirmBtn.textContent = confirmText;
+  confirmBtn.className = danger ? 'btn btn-danger' : 'btn btn-primary';
+  modal.classList.toggle('app-modal-danger', !!danger);
+  customEl.innerHTML = customHtml || (input ? `<input id="appModalInput" class="app-modal-input" type="${esc(inputType)}">` : '');
+
+  const inputEl = $('appModalInput');
+  if(inputEl) inputEl.value = value ?? '';
+
+  backdrop.classList.remove('hidden');
+  backdrop.setAttribute('aria-hidden','false');
+
+  return new Promise(resolve => {
+    let finished = false;
+    const close = result => {
+      if(finished) return;
+      finished = true;
+      backdrop.classList.add('hidden');
+      backdrop.setAttribute('aria-hidden','true');
+      document.removeEventListener('keydown', onKey);
+      backdrop.onclick = null;
+      cancelBtn.onclick = null;
+      confirmBtn.onclick = null;
+      resolve(result);
+    };
+    const onKey = e => {
+      if(e.key === 'Escape') close({confirmed:false, value:null});
+      if(e.key === 'Enter' && inputEl && document.activeElement === inputEl){
+        e.preventDefault();
+        close({confirmed:true, value:inputEl.value});
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    backdrop.onclick = e => { if(e.target === backdrop) close({confirmed:false, value:null}); };
+    cancelBtn.onclick = () => close({confirmed:false, value:null});
+    confirmBtn.onclick = () => close({confirmed:true, value:inputEl ? inputEl.value : true});
+    setTimeout(() => (inputEl || confirmBtn)?.focus(), 20);
+  });
+}
+
+async function appConfirm(message, options={}){
+  const parsed = splitDialogMessage(message);
+  const result = await openAppModal({
+    title: options.title || parsed.title,
+    message: options.message ?? parsed.body,
+    confirmText: options.confirmText || (options.danger ? 'Yes, continue' : 'Confirm'),
+    cancelText: options.cancelText || 'Cancel',
+    danger: !!options.danger
+  });
+  return !!result.confirmed;
+}
+
+async function appPrompt(message, defaultValue='', options={}){
+  const parsed = splitDialogMessage(message);
+  const result = await openAppModal({
+    title: options.title || parsed.title,
+    message: options.message ?? parsed.body,
+    confirmText: options.confirmText || 'Save',
+    cancelText: options.cancelText || 'Cancel',
+    danger: !!options.danger,
+    input: true,
+    value: defaultValue ?? '',
+    inputType: options.inputType || 'text'
+  });
+  return result.confirmed ? String(result.value ?? '') : null;
+}
+
+async function appAccessDialog(staff){
+  const branchOptions = branches.map(b => `<option value="${esc(b.id)}">${esc(b.name)}</option>`).join('');
+  const role = staff.role === 'admin' ? 'admin' : 'staff';
+  const html = `
+    <div class="app-modal-select-grid">
+      <div class="app-modal-field">
+        <label>Staff</label>
+        <div><strong>${esc((staff.display_name || '').trim() || fallbackDisplayName(staff.email || ''))}</strong><br><small>${esc(staff.email || '')}</small></div>
+      </div>
+      <div class="app-modal-field">
+        <label>Branch</label>
+        <select id="accessModalBranch">${branchOptions}</select>
+      </div>
+      <div class="app-modal-field">
+        <label>Role</label>
+        <select id="accessModalRole">
+          <option value="staff">Staff</option>
+          <option value="admin">Branch Admin</option>
+        </select>
+      </div>
+    </div>`;
+  const promise = openAppModal({
+    title:'Edit Staff Access',
+    message:'Update access only. The staff display name and login email will not be changed.',
+    confirmText:'Save Access',
+    customHtml:html
+  });
+  setTimeout(() => {
+    if($('accessModalBranch')) $('accessModalBranch').value = staff.branch_id || currentBranchId || '';
+    if($('accessModalRole')) $('accessModalRole').value = role;
+  }, 0);
+  const result = await promise;
+  if(!result.confirmed) return null;
+  return {
+    branchId: $('accessModalBranch')?.value || '',
+    role: $('accessModalRole')?.value || 'staff'
+  };
+}
+
+function addProfessionalPageHeadings(){
+  const config = {
+    charges:['Billing Workspace','Monthly Charges','Record, review and export resident charges for the selected billing cycle.'],
+    recurring:['Recurring Billing','Monthly Packages','Manage repeat packages, services and rentals with clear effective dates.'],
+    setup:['Resident Management','Residents','Maintain the active resident list used throughout billing.'],
+    items:['Charge Catalogue','Items','Manage stock, package, service and rental items with future pricing.'],
+    staff:['Account Management','Staff','Create staff accounts and manage names, access and password recovery.'],
+    branches:['Organisation','Branches','Manage branch workspaces while keeping billing data separated.'],
+    audit:['Governance','Audit History','Review who changed billing information and when.'],
+    loginActivity:['Security','Login Activity','Review successful and failed sign-in activity across the system.'],
+    backups:['Data Protection','Backups','Create and restore protected billing snapshots when required.'],
+    settings:['Account','Settings','Manage your profile, sign-in email, password and personal account settings.']
+  };
+  Object.entries(config).forEach(([key,parts]) => {
+    const section = $(`${key}Tab`);
+    if(!section || section.querySelector('.page-heading')) return;
+    const heading = document.createElement('div');
+    heading.className='page-heading';
+    heading.innerHTML=`<div class="page-heading-copy"><div class="page-heading-kicker">${esc(parts[0])}</div><h1>${esc(parts[1])}</h1><p>${esc(parts[2])}</p></div>`;
+    section.prepend(heading);
+  });
+}
+
+function addSidebarGroups(){
+  const tabs = document.querySelector('.tabs');
+  if(!tabs || tabs.dataset.grouped === '1') return;
+  tabs.dataset.grouped='1';
+  const labels = [
+    ['charges','Operations'],
+    ['setup','Management'],
+    ['audit','System']
+  ];
+  labels.forEach(([before,label]) => {
+    const btn = tabs.querySelector(`[data-tab="${before}"]`);
+    if(btn){
+      const el=document.createElement('div');
+      el.className='nav-group-label';
+      el.textContent=label;
+      tabs.insertBefore(el,btn);
+    }
+  });
+}
+
+function setupAccountMenu(){
+  const btn=$('accountMenuBtn'), menu=$('accountMenu');
+  if(!btn || !menu || btn.dataset.ready==='1') return;
+  btn.dataset.ready='1';
+  btn.addEventListener('click',e=>{
+    e.stopPropagation();
+    const opening=menu.classList.contains('hidden');
+    menu.classList.toggle('hidden',!opening);
+    btn.setAttribute('aria-expanded',opening?'true':'false');
+  });
+  document.addEventListener('click',e=>{
+    if(!e.target.closest('.app-account')){
+      menu.classList.add('hidden');
+      btn.setAttribute('aria-expanded','false');
+    }
+  });
+  $('accountSettingsBtn')?.addEventListener('click',()=>{
+    menu.classList.add('hidden');
+    const tab=document.querySelector('.tab[data-tab="settings"]');
+    tab?.click();
+  });
+}
+
+function upgradePolishedEmptyStates(){
+  const replacements = [
+    ['No residents yet.','No residents yet','Add your first resident to start recording monthly charges.','♙'],
+    ['No items yet.','No items yet','Add a charge item to build your branch catalogue.','＋'],
+    ['No staff accounts found.','No staff accounts found','Create a staff account to give your team secure access.','♟'],
+    ['No recurring charges yet.','No monthly packages yet','Add a repeat charge and it will flow into eligible billing cycles automatically.','↻']
+  ];
+  document.querySelectorAll('.row').forEach(row=>{
+    const txt=(row.textContent||'').trim();
+    const match=replacements.find(r=>txt===r[0]);
+    if(match){
+      row.classList.add('polished-empty');
+      row.innerHTML=`<div><div class="empty-icon">${match[3]}</div><div class="empty-title">${match[1]}</div><div class="empty-copy">${match[2]}</div></div>`;
+    }
+  });
+}
+
+
 const money=n=>new Intl.NumberFormat('en-MY',{style:'currency',currency:'MYR'}).format(Number(n||0)).replace('MYR','RM');
 const todayMonth = () => {
   const today = new Date();
@@ -3033,7 +3601,7 @@ window.editRecurringPrice = async id => {
   const billingMonth =
     $('monthPicker')?.value || todayMonth();
 
-  const newAmountText = prompt(
+  const newAmountText = await appPrompt(
     `Permanent price change\n\n` +
     `Resident: ${recurringCharge.residents?.name || ''}\n` +
     `Package: ${recurringCharge.items?.name || ''}\n` +
@@ -3056,7 +3624,7 @@ window.editRecurringPrice = async id => {
     return;
   }
 
-  const effectiveMonth = prompt(
+  const effectiveMonth = await appPrompt(
     'Effective billing cycle (YYYY-MM):',
     billingMonth
   );
@@ -3070,7 +3638,7 @@ window.editRecurringPrice = async id => {
     return;
   }
 
-  const reason = prompt(
+  const reason = await appPrompt(
     'Reason for permanent price change:',
     ''
   );
@@ -3128,7 +3696,7 @@ window.setRecurringSpecialMonth = async id => {
   const billingMonth =
     $('monthPicker')?.value || todayMonth();
 
-  const specialMonth = prompt(
+  const specialMonth = await appPrompt(
     'Special billing cycle (YYYY-MM):',
     billingMonth
   );
@@ -3142,7 +3710,7 @@ window.setRecurringSpecialMonth = async id => {
     return;
   }
 
-  const specialAmountText = prompt(
+  const specialAmountText = await appPrompt(
     `Special month price\n\n` +
     `Resident: ${recurringCharge.residents?.name || ''}\n` +
     `Package: ${recurringCharge.items?.name || ''}\n` +
@@ -3165,7 +3733,7 @@ window.setRecurringSpecialMonth = async id => {
     return;
   }
 
-  const reason = prompt(
+  const reason = await appPrompt(
     'Reason for special month price:',
     ''
   );
@@ -3220,7 +3788,7 @@ window.stopRecurring = async id => {
 
   const today = new Date().toISOString().slice(0, 10);
 
-const enteredDate = prompt(
+const enteredDate = await appPrompt(
   'Enter the last charge date (YYYY-MM-DD):',
   today
 );
@@ -3295,12 +3863,12 @@ async function loadRecurringPricingData() {
   }
 }
 function renderResidentList(){$('residentList').innerHTML=residents.length?residents.map(r=>`<div class="row"><div><strong>${esc(r.name)}</strong><br><small>${esc(r.room_ref||'No room reference')}</small></div><span class="badge">ACTIVE</span><button class="btn btn-danger" onclick="deactivateResident('${r.id}')">Deactivate</button></div>`).join(''):'<div class="row"><small>No residents yet.</small></div>'}
-window.deactivateResident=async id=>{if(!confirm('Deactivate this resident? Existing records will remain.'))return;const {error}=await sb.from('residents').update({active:false}).eq('id',id);if(error)return toast(error.message);await loadResidents();renderSelectors();renderResidentList();toast('Resident deactivated')};
+window.deactivateResident=async id=>{if(!await appConfirm('Deactivate resident?\n\nExisting billing records will remain.', {danger:true, confirmText:'Deactivate'}))return;const {error}=await sb.from('residents').update({active:false}).eq('id',id);if(error)return toast(error.message);await loadResidents();renderSelectors();renderResidentList();toast('Resident deactivated')};
 $('addItemBtn').onclick=async()=>{const name=$('newItemName').value.trim(),unit=$('newItemUnit').value.trim(),price=$('newItemPrice').value===''?null:Number($('newItemPrice').value),category=$('newItemCategory').value;if(!name)return toast('Enter item name');if(!currentBranchId)return toast('No active branch selected');if(editingItemId){const {error}=await sb.from('items').update({name,unit,price,category}).eq('id',editingItemId);if(error)return toast(error.message);toast('Item updated');cancelEditItem()}else{const {error}=await sb.from('items').insert({name,unit,price,category,active:true,sort_order:999,branch_id:currentBranchId});if(error)return toast(error.message);toast('Item added');$('newItemName').value='';$('newItemUnit').value='';$('newItemPrice').value='';$('newItemCategory').selectedIndex=0}await loadItems();await loadAllItems();renderSelectors();renderCalendar()};
 $('cancelEditItemBtn').onclick=cancelEditItem;
 function cancelEditItem(){editingItemId=null;$('newItemName').value='';$('newItemUnit').value='';$('newItemPrice').value='';$('newItemCategory').selectedIndex=0;$('itemFormTitle').textContent='Add Item';$('addItemBtn').textContent='Add Item';$('cancelEditItemBtn').classList.add('hidden')}
 window.editItem=id=>{const it=allItems.find(i=>i.id===id);if(!it)return;editingItemId=id;$('newItemName').value=it.name||'';$('newItemUnit').value=it.unit||'';$('newItemPrice').value=it.price??'';$('newItemCategory').value=it.category||'Stock';$('itemFormTitle').textContent='Edit Item';$('addItemBtn').textContent='Save Changes';$('cancelEditItemBtn').classList.remove('hidden');$('newItemName').scrollIntoView({behavior:'smooth',block:'center'})};
-window.deactivateItem=async id=>{if(!confirm('Deactivate this item? It will disappear from new entries, but existing charge records stay untouched.'))return;const {error}=await sb.from('items').update({active:false}).eq('id',id);if(error)return toast(error.message);await loadItems();await loadAllItems();renderSelectors();renderCalendar();toast('Item deactivated')};
+window.deactivateItem=async id=>{if(!await appConfirm('Deactivate item?\n\nIt will disappear from new entries, while existing charge records remain untouched.', {danger:true, confirmText:'Deactivate'}))return;const {error}=await sb.from('items').update({active:false}).eq('id',id);if(error)return toast(error.message);await loadItems();await loadAllItems();renderSelectors();renderCalendar();toast('Item deactivated')};
 window.reactivateItem=async id=>{const {error}=await sb.from('items').update({active:true}).eq('id',id);if(error)return toast(error.message);await loadItems();await loadAllItems();renderSelectors();renderCalendar();toast('Item reactivated')};
 function renderItemList(){$('itemList').innerHTML=allItems.length?allItems.map(i=>`<div class="row"><div><strong>${esc(i.name)}</strong><br><small>${esc(i.category||'')} · ${esc(i.unit||'—')} · RM ${Number(i.price||0).toFixed(2)}</small></div><span class="badge" style="${i.active?'':'background:#fff0ef;color:var(--red)'}">${i.active?'ACTIVE':'INACTIVE'}</span><div style="display:flex;gap:6px"><button class="btn btn-light btn-compact" style="border:1px solid var(--border)" onclick="editItem('${i.id}')">Edit</button>${i.active?`<button class="btn btn-danger btn-compact" onclick="deactivateItem('${i.id}')">Deactivate</button>`:`<button class="btn btn-primary btn-compact" onclick="reactivateItem('${i.id}')">Reactivate</button>`}</div></div>`).join(''):'<div class="row"><small>No items yet.</small></div>'}
 
@@ -4445,16 +5013,6 @@ $('exportFinancePdfBtn').onclick = () => {
         }
       },
 
-      didParseCell: function(data) {
-        if (
-          data.section === 'body' &&
-          data.column.index === 2 &&
-          pdfNumericValue(data.cell.raw) !== 0
-        ) {
-          data.cell.styles.fontStyle = 'bold';
-        }
-      },
-
       margin: {
         left: 14,
         right: 14
@@ -5091,15 +5649,6 @@ function renderFinancePdfPage(doc, resident, month, cycle, periodText, entriesFo
           data.cell.styles.fontStyle = 'bold';
         }
       },
-      didParseCell: function(data) {
-        if (
-          data.section === 'body' &&
-          data.column.index === 2 &&
-          pdfNumericValue(data.cell.raw) !== 0
-        ) {
-          data.cell.styles.fontStyle = 'bold';
-        }
-      },
       margin: { left: 14, right: 14 }
     });
 
@@ -5433,12 +5982,13 @@ window.restoreBackupFlow = async function(backupId) {
 
   const backupLabel = backupsById[backupId]?.label || 'this backup';
 
-  const confirmed = confirm(
-    `Restore "${backupLabel}"?\n\n` +
+  const confirmed = await appConfirm(
+    `Restore backup: ${backupLabel}\n\n` +
     `This will REPLACE all current charge entries, monthly packages, ` +
     `overrides and price history with what they were at that backup. ` +
     `A safety backup of the CURRENT data will be created automatically ` +
-    `first, so this can itself be undone.\n\nContinue?`
+    `first, so this can itself be undone.`,
+    { danger:true, confirmText:'Restore Backup' }
   );
 
   if (!confirmed) return;
@@ -5677,6 +6227,8 @@ function updateCurrentUserIdentityUI(){
     chip.innerHTML = `<strong>${esc(name)}</strong><small>${esc(currentUser.email || '')}</small>`;
     chip.title = currentUser.email || '';
   }
+  if($('accountButtonName')) $('accountButtonName').textContent = name;
+  if($('accountAvatar')) $('accountAvatar').textContent = initialsForName(name, currentUser.email || '');
   if($('settingsDisplayName')) $('settingsDisplayName').value = name;
   if($('settingsProfileEmail')) $('settingsProfileEmail').value = currentUser.email || '';
   if($('settingsCurrentEmail')) $('settingsCurrentEmail').value = currentUser.email || '';
@@ -5784,7 +6336,7 @@ function renderBranchList() {
 window.editBranch = async id => {
   const branch = branches.find(b => b.id === id);
   if (!branch) return;
-  const newName = prompt('Rename branch:', branch.name);
+  const newName = await appPrompt('Rename branch:', branch.name);
   if (newName === null) return;
   const trimmed = newName.trim();
   if (!trimmed) return toast('Branch name cannot be empty');
@@ -5799,8 +6351,9 @@ window.deleteBranch = async id => {
   if (!branch) return;
   if (branches.length <= 1) return toast("Can't delete your only branch");
 
-  const ok = confirm(
-    `Delete "${branch.name}"?\n\nThis only works cleanly if the branch has no residents, items, charges, or history left. If it still has data, you'll be offered a "force delete" option next that wipes everything in it.`
+  const ok = await appConfirm(
+    `Delete branch: ${branch.name}\n\nThis only works cleanly if the branch has no residents, items, charges or history. If data still exists, a separate guarded purge step will be required.`,
+    { danger:true, confirmText:'Delete Branch' }
   );
   if (!ok) return;
 
@@ -5818,7 +6371,7 @@ window.deleteBranch = async id => {
   }
 
   // Blocked because the branch still has data — offer a guarded force-purge.
-  const typed = prompt(
+  const typed = await appPrompt(
     `"${branch.name}" still has data attached (residents, items, charges, or history).\n\nTo permanently delete EVERYTHING in this branch and the branch itself, type its exact name below. This cannot be undone.`
   );
   if (typed !== branch.name) {
@@ -5926,7 +6479,7 @@ async function loadStaffList() {
   const status = $('staffListStatus');
   if (!list) return;
 
-  list.innerHTML = '<div class="row"><small>Loading staff accounts…</small></div>';
+  list.innerHTML = '<div class="loading-skeleton"></div><div class="loading-skeleton" style="margin-top:8px"></div><div class="loading-skeleton" style="margin-top:8px"></div>';
   if (status) status.textContent = '';
 
   let query = sb
@@ -5954,7 +6507,7 @@ async function loadStaffList() {
   }
 
   if (!staffProfiles.length) {
-    list.innerHTML = '<div class="row"><small>No staff accounts found.</small></div>';
+    list.innerHTML = '<div class="row staff-empty"><div><div class="empty-icon">♟</div><div class="empty-title">No staff accounts found</div><div class="empty-copy">Create a staff account to give your team secure access.</div></div></div>';
     return;
   }
 
@@ -5966,23 +6519,33 @@ async function loadStaffList() {
       'STAFF';
 
     const setupBadge = p.password_setup_complete === true
-      ? '<span class="badge">READY</span>'
-      : '<span class="badge" style="background:#fff4d8;color:#8a5a00">SETUP PENDING</span>';
+      ? '<span class="badge status-badge-success">READY</span>'
+      : '<span class="badge status-badge-warning">SETUP PENDING</span>';
 
     const canManage = currentUserRole === 'super_admin' && p.id !== currentUser?.id && p.role !== 'super_admin';
 
+    const displayName = (p.display_name || '').trim() || fallbackDisplayName(p.email || '');
+    const avatar = initialsForName(displayName, p.email || '');
+
     return `
-      <div class="row" style="grid-template-columns:1fr auto">
-        <div>
-          ${renderUserIdentity(p.display_name, p.email, p.id)}
-          <small>${esc(branchName)} · ${esc(roleLabel)}</small>
+      <div class="row staff-card">
+        <div class="staff-profile">
+          <div class="staff-avatar">${esc(avatar)}</div>
+          <div class="staff-profile-main">
+            <div class="staff-name">${esc(displayName)}</div>
+            <div class="staff-email">${esc(p.email || '')}</div>
+            <div class="staff-meta">
+              <span>${esc(branchName)}</span><span class="staff-meta-dot">•</span><span>${esc(roleLabel)}</span>
+              ${p.id === currentUser?.id ? '<span class="badge status-badge-info">YOU</span>' : ''}
+            </div>
+          </div>
         </div>
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+        <div class="staff-actions">
           ${setupBadge}
           ${canManage ? `
-            <button class="btn btn-light btn-compact" style="border:1px solid var(--border)" onclick="editStaffDisplayName('${p.id}')">Edit Name</button>
-            <button class="btn btn-light btn-compact" style="border:1px solid var(--border)" onclick="editStaffAccess('${p.id}')">Edit Access</button>
-            <button class="btn btn-light btn-compact" style="border:1px solid var(--border)" onclick="sendStaffPasswordReset('${p.id}')">Reset Password</button>
+            <button class="btn btn-subtle btn-compact" onclick="editStaffDisplayName('${p.id}')">Edit Name</button>
+            <button class="btn btn-subtle btn-compact" onclick="editStaffAccess('${p.id}')">Edit Access</button>
+            <button class="btn btn-subtle btn-compact" onclick="sendStaffPasswordReset('${p.id}')">Reset Password</button>
           ` : ''}
         </div>
       </div>
@@ -6005,7 +6568,7 @@ window.editStaffDisplayName = async id => {
   }
 
   const currentDisplayName = (staff.display_name || '').trim() || fallbackDisplayName(staff.email || '');
-  const answer = prompt(
+  const answer = await appPrompt(
     `Edit Display Name\n\nLinked email (read only): ${staff.email || '-'}\n\nDisplay Name:`,
     currentDisplayName
   );
@@ -6050,35 +6613,12 @@ window.editStaffAccess = async id => {
     return;
   }
 
-  const branchOptions = branches.map((b, i) => `${i + 1}. ${b.name}`).join('\n');
-  const currentBranchIndex = Math.max(0, branches.findIndex(b => b.id === staff.branch_id));
+  const access = await appAccessDialog(staff);
+  if (!access) return;
 
-  const branchAnswer = prompt(
-    `Edit Access\n\nStaff: ${(staff.display_name || '').trim() || fallbackDisplayName(staff.email || '')}\nLinked email (read only): ${staff.email || '-'}\n\n${branchOptions}\n\nEnter branch number:`,
-    String(currentBranchIndex + 1)
-  );
-
-  if (branchAnswer === null) return;
-
-  const branchIndex = Number(branchAnswer) - 1;
-  const selectedBranch = branches[branchIndex];
-
+  const selectedBranch = branches.find(b => b.id === access.branchId);
   if (!selectedBranch) {
-    toast('Invalid branch selection');
-    return;
-  }
-
-  const roleAnswer = prompt(
-    'Role:\n1. Staff\n2. Branch Admin\n\nEnter 1 or 2:',
-    staff.role === 'admin' ? '2' : '1'
-  );
-
-  if (roleAnswer === null) return;
-
-  const newRole = roleAnswer === '2' ? 'admin' : roleAnswer === '1' ? 'staff' : null;
-
-  if (!newRole) {
-    toast('Invalid role selection');
+    toast('Please select a valid branch');
     return;
   }
 
@@ -6088,7 +6628,7 @@ window.editStaffAccess = async id => {
     target_user_id: id,
     new_display_name: unchangedDisplayName,
     new_branch_id: selectedBranch.id,
-    new_role: newRole
+    new_role: access.role
   });
 
   if (error) {
@@ -6112,7 +6652,7 @@ window.sendStaffPasswordReset = async id => {
     return;
   }
 
-  const ok = confirm(`Send a password reset email to ${staff.email}?`);
+  const ok = await appConfirm(`Reset staff password\n\nSend a secure password reset email to ${staff.email}?`, {confirmText:'Send Reset Email'});
   if (!ok) return;
 
   const { error } = await sb.auth.resetPasswordForEmail(staff.email, {
@@ -6163,6 +6703,14 @@ function applyRoleAccess() {
           ? 'ADMIN'
           : 'STAFF';
 
+    if ($('accountButtonRole')) {
+      $('accountButtonRole').textContent =
+        currentUserRole === 'super_admin'
+          ? 'Super Admin'
+          : isAdmin
+            ? 'Branch Admin'
+            : 'Staff';
+    }
   }
 }
 async function loadBillingCycleStatus() {
@@ -6259,7 +6807,7 @@ $('cycleLockBtn').onclick = async () => {
 
   if (currentCycleLocked) {
 
-    const ok = confirm(
+    const ok = await appConfirm(
       `Unlock ${month} billing cycle?\n\n` +
       `${formatShortDate(cycle.startDate)} – ` +
       `${formatShortDate(cycle.endDate)}\n\n` +
@@ -6295,7 +6843,7 @@ $('cycleLockBtn').onclick = async () => {
 
   else {
 
-    const ok = confirm(
+    const ok = await appConfirm(
       `Close ${month} billing cycle?\n\n` +
       `${formatShortDate(cycle.startDate)} – ` +
       `${formatShortDate(cycle.endDate)}\n\n` +
@@ -6844,6 +7392,19 @@ sb.auth.onAuthStateChange((event,session)=>{
 });
 
 init();
+
+
+// v38 UI initialization
+addSidebarGroups();
+addProfessionalPageHeadings();
+setupAccountMenu();
+setTimeout(upgradePolishedEmptyStates, 100);
+
+const uiObserver = new MutationObserver(() => {
+  clearTimeout(window.__mintyUiPolishTimer);
+  window.__mintyUiPolishTimer = setTimeout(upgradePolishedEmptyStates, 50);
+});
+if($('appView')) uiObserver.observe($('appView'), {childList:true, subtree:true});
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
