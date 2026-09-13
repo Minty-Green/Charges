@@ -1172,6 +1172,128 @@ input:focus,select:focus,textarea:focus{
   display:none!important;
 }
 
+
+/* =========================================================
+   v43 — Management & Admin UX Polish
+   Database/billing logic unchanged.
+   ========================================================= */
+.management-grid{
+  display:grid;
+  grid-template-columns:minmax(300px,.8fr) minmax(420px,1.35fr);
+  gap:16px;
+  align-items:start;
+}
+.management-form-card{position:sticky;top:84px}
+.section-card-head{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin-bottom:12px;flex-wrap:wrap
+}
+.section-card-head h3{margin:0}
+.section-card-head .note{margin:3px 0 0}
+.list-search{
+  position:relative;min-width:220px;flex:0 1 320px
+}
+.list-search input{width:100%;padding-right:34px}
+.list-search .search-mark{
+  position:absolute;right:11px;top:50%;transform:translateY(-50%);
+  color:#8a9995;pointer-events:none
+}
+.management-count{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:28px;height:24px;padding:0 8px;border-radius:999px;
+  background:#edf7f3;color:var(--green2);font-size:10px;font-weight:900
+}
+.entity-list .row{
+  grid-template-columns:minmax(0,1fr) auto auto!important;
+  padding:12px 13px
+}
+.entity-main{min-width:0}
+.entity-title{font-weight:900;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.entity-sub{font-size:11px;color:var(--muted2);margin-top:3px}
+.entity-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.entity-list .badge{justify-self:end}
+.entity-row-hidden{display:none!important}
+
+.admin-table-wrap{
+  overflow:auto;
+  margin-top:14px;
+  border:1px solid rgba(19,85,72,.10);
+  border-radius:14px;
+  background:#fff;
+}
+.admin-table-wrap table{margin:0;min-width:820px}
+.admin-table-wrap thead th{
+  position:sticky;top:0;z-index:2;
+  background:#f3f7f5;
+  color:#45635b;
+  font-size:10px;
+  letter-spacing:.045em;
+  text-transform:uppercase;
+  border-bottom:1px solid #dfeae6
+}
+.admin-table-wrap tbody tr:hover td{background:#f8fbfa}
+.admin-toolbar{
+  background:linear-gradient(180deg,#fff,#f8fbfa)!important;
+  border-radius:14px!important;
+  padding:13px!important
+}
+.admin-toolbar .tfield label{
+  font-size:10px!important;font-weight:900!important;
+  letter-spacing:.05em;text-transform:uppercase;color:#71847f
+}
+.admin-status{
+  display:flex;align-items:center;gap:7px;
+  min-height:24px;margin-top:9px;font-size:11px;color:var(--muted2)
+}
+.admin-status:empty{display:none}
+.security-summary{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px
+}
+.security-summary-card{
+  border:1px solid rgba(19,85,72,.10);border-radius:13px;
+  padding:12px 13px;background:#fbfdfc
+}
+.security-summary-card span{
+  display:block;font-size:9px;font-weight:900;letter-spacing:.06em;
+  text-transform:uppercase;color:#81908c;margin-bottom:4px
+}
+.security-summary-card strong{font-size:16px;color:var(--ink)}
+.backup-create-card{
+  background:linear-gradient(135deg,#f0f9f6,#fff)!important;
+  border-color:#cce7de!important
+}
+.backup-list .row{grid-template-columns:minmax(0,1fr) auto!important}
+.settings-grid .security-card{
+  padding:20px!important;
+  border-radius:16px!important
+}
+.settings-grid .security-card h3{margin-bottom:5px}
+.settings-grid .security-card .note{line-height:1.55}
+.settings-grid .security-card button{min-width:150px}
+.settings-section-icon{
+  width:34px;height:34px;border-radius:10px;
+  display:grid;place-items:center;background:#edf7f3;color:var(--green2);
+  font-weight:900;margin-bottom:10px
+}
+.audit-action-badge{
+  display:inline-flex;padding:4px 7px;border-radius:999px;
+  background:#eef5f3;color:#47645c;font-size:9px;font-weight:900
+}
+
+@media(max-width:1000px){
+  .management-grid{grid-template-columns:1fr}
+  .management-form-card{position:static}
+}
+@media(max-width:650px){
+  .section-card-head{align-items:stretch}
+  .list-search{min-width:0;flex:1 1 100%}
+  .entity-list .row{grid-template-columns:minmax(0,1fr) auto!important}
+  .entity-list .row .badge{grid-column:2}
+  .entity-actions{grid-column:1/-1;justify-content:flex-start}
+  .security-summary{grid-template-columns:1fr}
+  .settings-grid .security-card{padding:16px!important}
+}
+
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -1499,12 +1621,21 @@ input:focus,select:focus,textarea:focus{
       </section>
 
       <section id="setupTab" class="hidden">
-        <div class="card panel" style="max-width:480px">
-          <h3>Residents</h3>
-          <div class="field"><label>Resident Name</label><input id="newResidentName" placeholder="e.g. Resident A"></div>
-          <div class="field"><label>Room / Reference</label><input id="newResidentRoom" placeholder="e.g. N16"></div>
-          <button id="addResidentBtn" class="btn btn-primary">Add Resident</button>
-          <div id="residentList" class="list" style="margin-top:14px"></div>
+        <div class="management-grid">
+          <div class="card panel management-form-card">
+            <h3>Add Resident</h3>
+            <p class="note">Create a resident profile for the currently selected branch.</p>
+            <div class="field"><label>Resident Name</label><input id="newResidentName" placeholder="e.g. Resident A"></div>
+            <div class="field"><label>Room / Reference</label><input id="newResidentRoom" placeholder="e.g. N16"></div>
+            <button id="addResidentBtn" class="btn btn-primary">Add Resident</button>
+          </div>
+          <div class="card panel">
+            <div class="section-card-head">
+              <div><h3>Active Residents <span id="residentCount" class="management-count">0</span></h3><p class="note">Residents available for monthly charge entry.</p></div>
+              <div class="list-search"><input id="residentListSearch" type="search" placeholder="Search resident or room…" autocomplete="off"><span class="search-mark">⌕</span></div>
+            </div>
+            <div id="residentList" class="list entity-list"></div>
+          </div>
         </div>
       </section>
       <section id="itemsTab" class="hidden">
@@ -1521,19 +1652,27 @@ input:focus,select:focus,textarea:focus{
             <p class="note" style="margin-top:10px">Editing a price only changes future entries — dates already charged keep the price they were saved at.</p>
           </div>
           <div class="card panel">
-            <h3>All Items</h3>
-            <div id="itemList" class="list"></div>
+            <div class="section-card-head">
+              <div><h3>All Items <span id="itemCount" class="management-count">0</span></h3><p class="note">Search, edit, activate or deactivate catalogue items.</p></div>
+              <div class="list-search"><input id="itemListSearch" type="search" placeholder="Search item, category or unit…" autocomplete="off"><span class="search-mark">⌕</span></div>
+            </div>
+            <div id="itemList" class="list entity-list"></div>
           </div>
         </div>
       </section>
       <section id="branchesTab" class="hidden">
-        <div class="card panel" style="max-width:480px">
-          <h3>Branches</h3>
-          <p class="note">Only you (super admin) can see this. Each branch's residents, items, and charges are kept completely separate.</p>
-          <div class="field"><label>Branch Name</label><input id="newBranchName" placeholder="e.g. Jelutong Branch"></div>
-          <div class="field"><label>Copy items from (optional)</label><select id="newBranchCopyFrom"><option value="">Start empty</option></select></div>
-          <button id="addBranchBtn" class="btn btn-primary">Add Branch</button>
-          <div id="branchList" class="list" style="margin-top:14px"></div>
+        <div class="management-grid">
+          <div class="card panel management-form-card">
+            <h3>Add Branch</h3>
+            <p class="note">Create a separate branch workspace. You can optionally copy the current item catalogue from another branch.</p>
+            <div class="field"><label>Branch Name</label><input id="newBranchName" placeholder="e.g. Jelutong Branch"></div>
+            <div class="field"><label>Copy items from (optional)</label><select id="newBranchCopyFrom"><option value="">Start empty</option></select></div>
+            <button id="addBranchBtn" class="btn btn-primary">Add Branch</button>
+          </div>
+          <div class="card panel">
+            <div class="section-card-head"><div><h3>Branches <span id="branchCount" class="management-count">0</span></h3><p class="note">Each branch keeps residents, items and charges separate.</p></div></div>
+            <div id="branchList" class="list entity-list"></div>
+          </div>
         </div>
       </section>
       <section id="staffTab" class="hidden">
@@ -1574,7 +1713,7 @@ input:focus,select:focus,textarea:focus{
       View changes made to resident charges and monthly packages.
     </p>
 
-    <div class="card toolbar">
+    <div class="card toolbar admin-toolbar">
 
       <div class="tfield">
         <label>Resident</label>
@@ -1597,7 +1736,7 @@ input:focus,select:focus,textarea:focus{
 
     </div>
 
-    <div style="overflow-x:auto; margin-top:16px;">
+    <div class="admin-table-wrap">
 
       <table id="auditTable">
 
@@ -1644,7 +1783,7 @@ input:focus,select:focus,textarea:focus{
       system; this page stores only safe audit metadata.
     </p>
 
-    <div class="card toolbar">
+    <div class="card toolbar admin-toolbar">
       <div class="tfield">
         <label>Result</label>
         <select id="loginActivityResult">
@@ -1664,9 +1803,9 @@ input:focus,select:focus,textarea:focus{
       </button>
     </div>
 
-    <div id="loginActivityStatus" class="status"></div>
+    <div id="loginActivityStatus" class="admin-status"></div>
 
-    <div style="overflow-x:auto; margin-top:16px;">
+    <div class="admin-table-wrap">
       <table id="loginActivityTable">
         <thead>
           <tr>
@@ -1706,7 +1845,7 @@ input:focus,select:focus,textarea:focus{
       always itself be undone.
     </p>
 
-    <div class="grid2" style="align-items:end;margin-bottom:16px">
+    <div class="grid2 card panel backup-create-card" style="align-items:end;margin-bottom:16px">
       <div class="field" style="margin-bottom:0">
         <label>Label (optional)</label>
         <input id="newBackupLabel" placeholder="e.g. Before September closing">
@@ -1714,9 +1853,9 @@ input:focus,select:focus,textarea:focus{
       <button id="createBackupBtn" class="btn btn-primary">Create Backup Now</button>
     </div>
 
-    <div id="backupStatus" class="status"></div>
+    <div id="backupStatus" class="admin-status"></div>
 
-    <div id="backupsList" class="list" style="margin-top:10px">
+    <div id="backupsList" class="list backup-list" style="margin-top:10px">
       <div class="row"><small>Loading backups…</small></div>
     </div>
 
@@ -1727,7 +1866,7 @@ input:focus,select:focus,textarea:focus{
 <section id="settingsTab" class="hidden">
   <div class="settings-grid">
     <div class="card security-card">
-      <h3>Account Profile</h3>
+      <div class="settings-section-icon">ID</div><h3>Account Profile</h3>
       <p class="note">This name is shown in Audit History, Login Activity, Backups and other staff activity views. Your email remains your sign-in account.</p>
       <div class="field"><label>Display Name / Username</label><input id="settingsDisplayName" type="text" maxlength="80" placeholder="e.g. Mohammed Safia"></div>
       <div class="field"><label>Linked Email</label><input id="settingsProfileEmail" type="email" disabled></div>
@@ -1736,7 +1875,7 @@ input:focus,select:focus,textarea:focus{
     </div>
 
     <div class="card security-card">
-      <h3>Account Email</h3>
+      <div class="settings-section-icon">@</div><h3>Account Email</h3>
       <p class="note">Change the email used to sign in. For security, Supabase may send confirmation links before the change takes effect.</p>
       <div class="field"><label>Current Email</label><input id="settingsCurrentEmail" type="email" disabled></div>
       <div class="field"><label>New Email</label><input id="settingsNewEmail" type="email" autocomplete="email" placeholder="newemail@example.com"></div>
@@ -1745,7 +1884,7 @@ input:focus,select:focus,textarea:focus{
     </div>
 
     <div class="card security-card">
-      <h3>Change Password</h3>
+      <div class="settings-section-icon">••</div><h3>Change Password</h3>
       <p class="note">Enter your current password before choosing a new one.</p>
       <div class="field"><label>Current Password</label><input id="settingsCurrentPassword" type="password" autocomplete="current-password"></div>
       <div class="field"><label>New Password</label><input id="settingsNewPassword" type="password" autocomplete="new-password"></div>
@@ -4242,7 +4381,25 @@ async function loadRecurringPricingData() {
       priceHistoryResult.data || [];
   }
 }
-function renderResidentList(){$('residentList').innerHTML=residents.length?residents.map(r=>`<div class="row"><div><strong>${esc(r.name)}</strong><br><small>${esc(r.room_ref||'No room reference')}</small></div><span class="badge">ACTIVE</span><button class="btn btn-danger" onclick="deactivateResident('${r.id}')">Deactivate</button></div>`).join(''):'<div class="row"><small>No residents yet.</small></div>'}
+function renderResidentList(){
+  const list=$('residentList');
+  if(!list)return;
+  if($('residentCount')) $('residentCount').textContent=String(residents.length);
+  list.innerHTML=residents.length?residents.map(r=>`
+    <div class="row" data-resident-search="${esc(((r.name||'')+' '+(r.room_ref||'')).toLowerCase())}">
+      <div class="entity-main"><div class="entity-title">${esc(r.name)}</div><div class="entity-sub">${esc(r.room_ref||'No room reference')}</div></div>
+      <span class="badge status-badge-success">ACTIVE</span>
+      <div class="entity-actions"><button class="btn btn-danger btn-compact" onclick="deactivateResident('${r.id}')">Deactivate</button></div>
+    </div>`).join(''):'<div class="row polished-empty"><div><div class="empty-icon">♙</div><div class="empty-title">No residents yet</div><div class="empty-copy">Add your first resident to start recording monthly charges.</div></div></div>';
+  applyResidentListSearch();
+}
+function applyResidentListSearch(){
+  const q=($('residentListSearch')?.value||'').trim().toLowerCase();
+  document.querySelectorAll('#residentList [data-resident-search]').forEach(row=>{
+    row.classList.toggle('entity-row-hidden',!!q && !row.dataset.residentSearch.includes(q));
+  });
+}
+
 window.deactivateResident=async id=>{if(!await appConfirm('Deactivate resident?\n\nExisting billing records will remain.', {danger:true, confirmText:'Deactivate'}))return;const {error}=await sb.from('residents').update({active:false}).eq('id',id);if(error)return toast(error.message);await loadResidents();renderSelectors();renderResidentList();toast('Resident deactivated')};
 $('addItemBtn').onclick=async()=>{const name=$('newItemName').value.trim(),unit=$('newItemUnit').value.trim(),price=$('newItemPrice').value===''?null:Number($('newItemPrice').value),category=$('newItemCategory').value;if(!name)return toast('Enter item name');if(!currentBranchId)return toast('No active branch selected');if(editingItemId){const {error}=await sb.from('items').update({name,unit,price,category}).eq('id',editingItemId);if(error)return toast(error.message);toast('Item updated');cancelEditItem()}else{const {error}=await sb.from('items').insert({name,unit,price,category,active:true,sort_order:999,branch_id:currentBranchId});if(error)return toast(error.message);toast('Item added');$('newItemName').value='';$('newItemUnit').value='';$('newItemPrice').value='';$('newItemCategory').selectedIndex=0}await loadItems();await loadAllItems();renderSelectors();renderCalendar()};
 $('cancelEditItemBtn').onclick=cancelEditItem;
@@ -4250,7 +4407,28 @@ function cancelEditItem(){editingItemId=null;$('newItemName').value='';$('newIte
 window.editItem=id=>{const it=allItems.find(i=>i.id===id);if(!it)return;editingItemId=id;$('newItemName').value=it.name||'';$('newItemUnit').value=it.unit||'';$('newItemPrice').value=it.price??'';$('newItemCategory').value=it.category||'Stock';$('itemFormTitle').textContent='Edit Item';$('addItemBtn').textContent='Save Changes';$('cancelEditItemBtn').classList.remove('hidden');$('newItemName').scrollIntoView({behavior:'smooth',block:'center'})};
 window.deactivateItem=async id=>{if(!await appConfirm('Deactivate item?\n\nIt will disappear from new entries, while existing charge records remain untouched.', {danger:true, confirmText:'Deactivate'}))return;const {error}=await sb.from('items').update({active:false}).eq('id',id);if(error)return toast(error.message);await loadItems();await loadAllItems();renderSelectors();renderCalendar();toast('Item deactivated')};
 window.reactivateItem=async id=>{const {error}=await sb.from('items').update({active:true}).eq('id',id);if(error)return toast(error.message);await loadItems();await loadAllItems();renderSelectors();renderCalendar();toast('Item reactivated')};
-function renderItemList(){$('itemList').innerHTML=allItems.length?allItems.map(i=>`<div class="row"><div><strong>${esc(i.name)}</strong><br><small>${esc(i.category||'')} · ${esc(i.unit||'—')} · RM ${Number(i.price||0).toFixed(2)}</small></div><span class="badge" style="${i.active?'':'background:#fff0ef;color:var(--red)'}">${i.active?'ACTIVE':'INACTIVE'}</span><div style="display:flex;gap:6px"><button class="btn btn-light btn-compact" style="border:1px solid var(--border)" onclick="editItem('${i.id}')">Edit</button>${i.active?`<button class="btn btn-danger btn-compact" onclick="deactivateItem('${i.id}')">Deactivate</button>`:`<button class="btn btn-primary btn-compact" onclick="reactivateItem('${i.id}')">Reactivate</button>`}</div></div>`).join(''):'<div class="row"><small>No items yet.</small></div>'}
+function renderItemList(){
+  const list=$('itemList');
+  if(!list)return;
+  if($('itemCount')) $('itemCount').textContent=String(allItems.length);
+  list.innerHTML=allItems.length?allItems.map(i=>`
+    <div class="row" data-item-list-search="${esc(((i.name||'')+' '+(i.category||'')+' '+(i.unit||'')).toLowerCase())}">
+      <div class="entity-main"><div class="entity-title">${esc(i.name)}</div><div class="entity-sub">${esc(i.category||'')} · ${esc(i.unit||'—')} · RM ${Number(i.price||0).toFixed(2)}</div></div>
+      <span class="badge ${i.active?'status-badge-success':'status-badge-danger'}">${i.active?'ACTIVE':'INACTIVE'}</span>
+      <div class="entity-actions">
+        <button class="btn btn-subtle btn-compact" onclick="editItem('${i.id}')">Edit</button>
+        ${i.active?`<button class="btn btn-danger btn-compact" onclick="deactivateItem('${i.id}')">Deactivate</button>`:`<button class="btn btn-primary btn-compact" onclick="reactivateItem('${i.id}')">Reactivate</button>`}
+      </div>
+    </div>`).join(''):'<div class="row polished-empty"><div><div class="empty-icon">＋</div><div class="empty-title">No items yet</div><div class="empty-copy">Add a charge item to build your branch catalogue.</div></div></div>';
+  applyItemListSearch();
+}
+function applyItemListSearch(){
+  const q=($('itemListSearch')?.value||'').trim().toLowerCase();
+  document.querySelectorAll('#itemList [data-item-list-search]').forEach(row=>{
+    row.classList.toggle('entity-row-hidden',!!q && !row.dataset.itemListSearch.includes(q));
+  });
+}
+
 
 
 
@@ -6694,13 +6872,17 @@ function renderBranchSwitcher() {
 function renderBranchList() {
   const el = $('branchList');
   if (el) {
+    if($('branchCount')) $('branchCount').textContent=String(branches.length);
     el.innerHTML = branches.map(b =>
       `<div class="row">
-        <span>${esc(b.name)}</span>
-        <button class="btn btn-light" style="border:1px solid var(--border)" onclick="editBranch('${b.id}')">Rename</button>
-        <button class="btn btn-danger" onclick="deleteBranch('${b.id}')">Delete</button>
+        <div class="entity-main"><div class="entity-title">${esc(b.name)}</div><div class="entity-sub">${b.id===currentBranchId?'Currently selected branch':'Separate billing workspace'}</div></div>
+        ${b.id===currentBranchId?'<span class="badge status-badge-info">CURRENT</span>':'<span></span>'}
+        <div class="entity-actions">
+          <button class="btn btn-subtle btn-compact" onclick="editBranch('${b.id}')">Rename</button>
+          <button class="btn btn-danger btn-compact" onclick="deleteBranch('${b.id}')">Delete</button>
+        </div>
       </div>`
-    ).join('') || '<div class="row"><small>No branches yet.</small></div>';
+    ).join('') || '<div class="row polished-empty"><div><div class="empty-icon">⌂</div><div class="empty-title">No branches yet</div><div class="empty-copy">Create a branch workspace to begin.</div></div></div>';
   }
   const copyFrom = $('newBranchCopyFrom');
   if (copyFrom) {
@@ -7773,6 +7955,10 @@ sb.auth.onAuthStateChange((event,session)=>{
 
 init();
 
+
+
+$('residentListSearch')?.addEventListener('input', applyResidentListSearch);
+$('itemListSearch')?.addEventListener('input', applyItemListSearch);
 
 // v38 UI initialization
 addSidebarGroups();
