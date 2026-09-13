@@ -839,6 +839,246 @@ input:focus,select:focus,textarea:focus{
   .kpi.kpi-grand strong{font-size:21px!important}
 }
 
+
+/* =========================================================
+   v39 — Monthly Charges & Daily Entry UX Upgrade
+   Billing/data logic unchanged.
+   ========================================================= */
+#chargesTab .mobile-view-toggle{
+  display:inline-flex;
+  padding:4px;
+  gap:4px;
+  background:#eaf2ef;
+  border:1px solid rgba(19,85,72,.10);
+  border-radius:12px;
+  margin-bottom:14px;
+}
+#chargesTab .view-toggle-btn{
+  border:0!important;
+  background:transparent;
+  color:#587069;
+  box-shadow:none;
+  padding:8px 14px;
+}
+#chargesTab .view-toggle-btn.active{
+  background:#fff;
+  color:var(--green2);
+  box-shadow:0 3px 10px rgba(20,70,59,.10);
+}
+#chargesTab > .toolbar{
+  display:grid;
+  grid-template-columns:minmax(210px,1.2fr) minmax(220px,1fr) minmax(120px,.55fr) auto auto auto;
+  align-items:end;
+  gap:12px;
+  padding:15px;
+  background:linear-gradient(180deg,#fff,#fbfdfc);
+}
+#chargesTab > .toolbar .tfield{margin:0}
+#chargesTab > .toolbar .tfield label{
+  display:block;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.055em;
+  text-transform:uppercase;
+  color:#71847f;
+  margin-bottom:6px;
+}
+#chargesTab > .toolbar #cycleStatus{
+  min-height:42px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:90px;
+  border:1px solid rgba(19,85,72,.08);
+}
+#chargesTab > .toolbar-actions{
+  border-radius:14px;
+  margin-top:10px;
+}
+#chargesTab > #saveStatus{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  margin:10px 2px 0;
+  min-height:20px;
+}
+#chargesTab .summary{margin-top:12px}
+
+.mobile-daily-card{
+  overflow:visible;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+.daily-control-card{
+  background:linear-gradient(135deg,#fff,#f6fbf9);
+  border:1px solid rgba(19,85,72,.11);
+  border-radius:16px;
+  box-shadow:var(--shadow-card);
+  padding:14px;
+  margin-bottom:12px;
+}
+.daily-top-grid{grid-template-columns:minmax(220px,1fr) minmax(260px,.8fr)!important}
+.daily-date-display{
+  min-height:44px;
+  display:grid;
+  place-items:center;
+  color:var(--ink);
+  font-size:13px;
+  background:#fff;
+}
+.daily-date-nav .btn{min-width:44px;font-size:20px}
+.daily-today-wrap{margin-top:6px!important}
+.daily-search-wrap{margin-top:0!important;margin-bottom:10px!important}
+.daily-search{background:#fff!important}
+.daily-existing{
+  background:linear-gradient(135deg,#eff9f5,#f9fcfb)!important;
+  border-color:#cce8df!important;
+  border-radius:14px!important;
+  margin:10px 0 12px!important;
+}
+.daily-existing > strong{
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.055em;
+  color:#54746b;
+}
+.daily-existing-list{display:flex;gap:6px;flex-wrap:wrap}
+.daily-existing-entry{
+  background:#fff!important;
+  border:1px solid #cfe6df!important;
+  border-radius:999px!important;
+  padding:6px 9px!important;
+}
+.daily-category{
+  background:#fff;
+  border:1px solid rgba(19,85,72,.10);
+  border-radius:15px;
+  overflow:hidden;
+  margin-top:11px!important;
+  box-shadow:0 3px 12px rgba(20,63,55,.045);
+}
+.daily-category h4{
+  border:0!important;
+  border-radius:0!important;
+  padding:10px 13px!important;
+  background:#f3f7f5!important;
+  color:#36574e;
+  font-size:11px!important;
+  letter-spacing:.045em;
+  text-transform:uppercase;
+}
+.daily-item{
+  border:0!important;
+  border-top:1px solid #edf2f0!important;
+  padding:12px 13px!important;
+  transition:background .16s ease,border-color .16s ease,box-shadow .16s ease;
+}
+.daily-item.has-quantity{
+  background:linear-gradient(90deg,#effaf6,#fbfefd)!important;
+  box-shadow:inset 4px 0 0 #4aa98c;
+}
+.daily-item-info strong{font-size:14px!important;color:var(--ink)}
+.daily-item-info small{color:#788984!important}
+.daily-stepper{
+  grid-template-columns:42px 54px 42px!important;
+  gap:5px!important;
+  padding:3px;
+  background:#f4f7f6;
+  border:1px solid #e1ebe7;
+  border-radius:12px;
+}
+.daily-stepper button{
+  width:42px;
+  height:42px!important;
+  border:0!important;
+  background:#fff!important;
+  border-radius:9px!important;
+  color:var(--green2);
+  box-shadow:0 1px 4px rgba(20,63,55,.08);
+}
+.daily-stepper button:hover:not(:disabled){background:#edf8f4!important}
+.daily-stepper input{
+  width:54px!important;
+  height:42px!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  font-size:15px;
+  color:var(--ink);
+}
+.daily-stepper button:disabled,.daily-stepper input:disabled{opacity:.45;cursor:not-allowed}
+.daily-summary-bar{
+  border:1px solid rgba(19,85,72,.12)!important;
+  border-radius:15px 15px 0 0;
+  background:rgba(255,255,255,.97)!important;
+  backdrop-filter:blur(12px);
+  padding:12px 15px!important;
+}
+.daily-summary-bar #dailyEntryTotal{
+  color:var(--green2);
+  font-size:21px;
+  letter-spacing:-.4px;
+}
+#dailySaveStatus{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  min-height:18px;
+  margin-top:2px;
+}
+#dailySaveStatus.saving:before{
+  content:'';
+  width:10px;height:10px;
+  border:2px solid #bdd6cf;
+  border-top-color:var(--green);
+  border-radius:50%;
+  animation:dailySpin .65s linear infinite;
+}
+#dailySaveStatus.saved{color:#18744d!important;font-weight:850}
+#dailySaveStatus.saved:before{content:'✓';font-weight:950}
+#dailySaveStatus.error{color:#b33b35!important;font-weight:750}
+#dailySaveStatus.locked{color:#946200!important;font-weight:750}
+@keyframes dailySpin{to{transform:rotate(360deg)}}
+.daily-no-resident{
+  padding:34px 18px;
+  text-align:center;
+  background:#fff;
+  border:1px dashed #cbdcd7;
+  border-radius:15px;
+  color:#6d817b;
+}
+.daily-no-resident strong{display:block;color:var(--ink);margin-bottom:4px}
+
+@media(max-width:1180px){
+  #chargesTab > .toolbar{grid-template-columns:1fr 1fr 150px;}
+  #chargesTab > .toolbar > button{width:100%}
+}
+@media(max-width:850px){
+  #chargesTab > .toolbar{grid-template-columns:1fr 1fr;}
+  #chargesTab > .toolbar .tfield:nth-child(3){grid-column:1/-1}
+  .daily-control-card{
+    position:sticky;
+    top:132px;
+    z-index:11;
+    box-shadow:0 9px 24px rgba(17,75,63,.12);
+  }
+}
+@media(max-width:620px){
+  #chargesTab .mobile-view-toggle{width:100%;display:grid;grid-template-columns:1fr 1fr}
+  #chargesTab > .toolbar{grid-template-columns:1fr;}
+  #chargesTab > .toolbar .tfield:nth-child(3){grid-column:auto}
+  .daily-top-grid{grid-template-columns:1fr!important}
+  .daily-control-card{top:126px;padding:11px}
+  .daily-category{border-radius:13px}
+  .daily-item{grid-template-columns:minmax(0,1fr) auto!important;gap:8px!important}
+  .daily-stepper{grid-template-columns:40px 48px 40px!important}
+  .daily-stepper button{width:40px}
+  .daily-stepper input{width:48px!important}
+  .daily-summary-bar{margin-left:-1px;margin-right:-1px}
+}
+
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -973,45 +1213,47 @@ input:focus,select:focus,textarea:focus{
         </div>
 
         <div id="dailyEntryView" class="card mobile-daily-card hidden-desktop">
-          <div class="daily-top-grid">
-            <div class="field" style="margin-bottom:0">
-              <label>Resident</label>
-              <select id="dailyResidentSelect"></select>
+          <div class="daily-control-card">
+            <div class="daily-top-grid">
+              <div class="field" style="margin-bottom:0">
+                <label>Resident</label>
+                <select id="dailyResidentSelect"></select>
+              </div>
+
+              <div>
+                <label style="display:block;font-size:12px;font-weight:800;margin-bottom:6px">Charge Date</label>
+                <div class="daily-date-nav">
+                  <button id="dailyPrevBtn" class="btn btn-light" style="border:1px solid var(--border)" title="Previous day">‹</button>
+                  <div id="dailyDateDisplay" class="daily-date-display">-</div>
+                  <button id="dailyNextBtn" class="btn btn-light" style="border:1px solid var(--border)" title="Next day">›</button>
+                </div>
+                <div class="daily-today-wrap">
+                  <button id="dailyTodayBtn" class="btn btn-light btn-compact" style="border:1px solid var(--border)">Today</button>
+                </div>
+              </div>
             </div>
 
-            <div>
-              <label style="display:block;font-size:12px;font-weight:800;margin-bottom:6px">Charge Date</label>
-              <div class="daily-date-nav">
-                <button id="dailyPrevBtn" class="btn btn-light" style="border:1px solid var(--border)">‹</button>
-                <div id="dailyDateDisplay" class="daily-date-display">-</div>
-                <button id="dailyNextBtn" class="btn btn-light" style="border:1px solid var(--border)">›</button>
-              </div>
-              <div class="daily-today-wrap">
-                <button id="dailyTodayBtn" class="btn btn-light btn-compact" style="border:1px solid var(--border)">Today</button>
-              </div>
+            <div class="daily-search-wrap">
+              <span class="daily-search-icon" aria-hidden="true">⌕</span>
+              <input
+                id="dailyItemSearch"
+                class="daily-search"
+                type="search"
+                placeholder="Search item..."
+                autocomplete="off"
+                aria-label="Search Daily Entry items"
+              >
+              <button
+                id="dailySearchClearBtn"
+                class="daily-search-clear"
+                type="button"
+                title="Clear search"
+                aria-label="Clear Daily Entry search"
+              >×</button>
             </div>
-          </div>
 
-          <div class="daily-search-wrap">
-            <span class="daily-search-icon" aria-hidden="true">⌕</span>
-            <input
-              id="dailyItemSearch"
-              class="daily-search"
-              type="search"
-              placeholder="Search item..."
-              autocomplete="off"
-              aria-label="Search Daily Entry items"
-            >
-            <button
-              id="dailySearchClearBtn"
-              class="daily-search-clear"
-              type="button"
-              title="Clear search"
-              aria-label="Clear Daily Entry search"
-            >×</button>
+            <div id="dailySearchStatus" class="daily-search-status hidden"></div>
           </div>
-
-          <div id="dailySearchStatus" class="daily-search-status hidden"></div>
 
           <div id="dailyExisting" class="daily-existing hidden">
             <strong>Already entered for this date</strong>
@@ -1025,7 +1267,7 @@ input:focus,select:focus,textarea:focus{
               <strong id="dailyEntryCount">0 entries</strong>
               <div id="dailySaveStatus" class="note">Select a resident to begin.</div>
             </div>
-            <strong id="dailyEntryTotal">RM 0.00</strong>
+            <div style="text-align:right"><small style="display:block;color:var(--muted2);font-weight:800">DAY TOTAL</small><strong id="dailyEntryTotal">RM 0.00</strong></div>
           </div>
         </div>
 
@@ -2289,6 +2531,14 @@ function setChargesDisplayMode(mode){
     applyBillingCycleStatus();
   }
 }
+function setDailySaveStatus(message, state=''){
+  const el = $('dailySaveStatus');
+  if(!el) return;
+  el.textContent = message || '';
+  el.classList.remove('saving','saved','error','locked');
+  if(state) el.classList.add(state);
+}
+
 async function loadDailyEntry(){
   const rid = $('dailyResidentSelect')?.value || $('residentSelect')?.value || '';
   dailySelectedDate = clampDailyDateToCycle(dailySelectedDate || formatDateISO(new Date()));
@@ -2300,7 +2550,7 @@ async function loadDailyEntry(){
     return;
   }
 
-  if($('dailySaveStatus')) $('dailySaveStatus').textContent = 'Loading…';
+  setDailySaveStatus('Loading charges…','saving');
 
   const {data,error} = await sb
     .from('charge_entries')
@@ -2309,7 +2559,7 @@ async function loadDailyEntry(){
     .eq('charge_date', dailySelectedDate);
 
   if(error){
-    if($('dailySaveStatus')) $('dailySaveStatus').textContent = error.message;
+    setDailySaveStatus(error.message,'error');
     return;
   }
 
@@ -2376,11 +2626,11 @@ function renderDailyEntry(){
 
   const rid = $('dailyResidentSelect')?.value || '';
   if(!rid){
-    list.innerHTML = '<p class="note">Select a resident to start entering charges.</p>';
+    list.innerHTML = '<div class="daily-no-resident"><strong>Select a resident</strong>Choose a resident above to start entering charges for the selected date.</div>';
     if($('dailyExisting')) $('dailyExisting').classList.add('hidden');
     if($('dailyEntryCount')) $('dailyEntryCount').textContent = '0 entries';
     if($('dailyEntryTotal')) $('dailyEntryTotal').textContent = money(0);
-    if($('dailySaveStatus')) $('dailySaveStatus').textContent = 'Select a resident to begin.';
+    setDailySaveStatus('Select a resident to begin.');
     return;
   }
 
@@ -2404,7 +2654,7 @@ function renderDailyEntry(){
       }
       return `
         <div
-          class="daily-item"
+          class="daily-item${qty > 0 ? ' has-quantity' : ''}"
           data-item-id="${it.id}"
           data-item-name="${esc(it.name)}"
         >
@@ -2413,9 +2663,9 @@ function renderDailyEntry(){
             <small>${esc(it.unit || '')}${it.price == null ? '' : ' · ' + money(it.price)}</small>
           </div>
           <div class="daily-stepper">
-            <button type="button" onclick="changeDailyQty('${it.id}',-1)">−</button>
-            <input type="number" min="0" step="1" value="${qty || ''}" data-daily-item="${it.id}" onchange="setDailyQtyFromInput(this)">
-            <button type="button" onclick="changeDailyQty('${it.id}',1)">+</button>
+            <button type="button" onclick="changeDailyQty('${it.id}',-1)" aria-label="Decrease ${esc(it.name)}" title="Decrease">−</button>
+            <input type="number" min="0" step="1" inputmode="numeric" value="${qty || ''}" data-daily-item="${it.id}" onchange="setDailyQtyFromInput(this)" aria-label="Quantity for ${esc(it.name)}">
+            <button type="button" onclick="changeDailyQty('${it.id}',1)" aria-label="Increase ${esc(it.name)}" title="Increase">+</button>
           </div>
         </div>
       `;
@@ -2443,7 +2693,7 @@ function renderDailyEntry(){
 
   if($('dailyEntryCount')) $('dailyEntryCount').textContent = `${count} ${count===1?'entry':'entries'}`;
   if($('dailyEntryTotal')) $('dailyEntryTotal').textContent = money(total);
-  if($('dailySaveStatus')) $('dailySaveStatus').textContent = currentCycleLocked ? 'Billing cycle is locked.' : 'All changes save automatically.';
+  setDailySaveStatus(currentCycleLocked ? 'Billing cycle is locked.' : 'Ready · changes save automatically', currentCycleLocked ? 'locked' : '');
 
   document.querySelectorAll('[data-daily-item]').forEach(inp => {
     inp.disabled = currentCycleLocked;
@@ -2465,7 +2715,7 @@ async function saveDailyQty(itemId, qty){
   qty = Math.max(0, Number(qty || 0));
   const existing = dailyEntries.find(e => e.item_id === itemId);
 
-  if($('dailySaveStatus')) $('dailySaveStatus').textContent = 'Saving…';
+  setDailySaveStatus('Saving…','saving');
 
   let error = null;
 
@@ -2494,7 +2744,7 @@ async function saveDailyQty(itemId, qty){
   }
 
   if(error){
-    if($('dailySaveStatus')) $('dailySaveStatus').textContent = error.message;
+    setDailySaveStatus(error.message,'error');
     return toast(error.message);
   }
 
@@ -2504,7 +2754,11 @@ async function saveDailyQty(itemId, qty){
     await loadMonth();
   }
 
-  if($('dailySaveStatus')) $('dailySaveStatus').textContent = 'Saved';
+  setDailySaveStatus('Saved','saved');
+  clearTimeout(window.__dailySavedTimer);
+  window.__dailySavedTimer = setTimeout(() => {
+    if(!currentCycleLocked) setDailySaveStatus('Ready · changes save automatically');
+  }, 1800);
 }
 window.changeDailyQty = async (itemId, delta) => {
   const existing = dailyEntries.find(e => e.item_id === itemId);
