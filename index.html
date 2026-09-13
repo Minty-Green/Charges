@@ -34,7 +34,7 @@
     .login{max-width:420px;margin:10vh auto;padding:26px}.login h1{margin:0 0 5px}.sub{color:var(--muted);font-size:13px;margin-bottom:20px}.field{margin-bottom:14px}.field label{display:block;font-size:12px;font-weight:800;margin-bottom:6px}.field input,.field select,.toolbar select,.toolbar input{width:100%;border:1px solid #c9d5d1;border-radius:9px;padding:10px 11px;background:white;outline:none}.field input:focus,.field select:focus,.toolbar select:focus,.toolbar input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(23,107,91,.1)}
     .toolbar{padding:14px;display:grid;grid-template-columns:minmax(280px,380px) 190px 110px auto auto auto;gap:10px;align-items:end;margin-bottom:12px}.toolbar .tfield label{display:block;font-size:11px;font-weight:800;color:var(--muted);margin-bottom:5px}
     .btn-compact{padding:8px 11px;font-size:12.5px}
-    #themeSelect option,#branchSwitcher option{color:var(--text);background:#fff}
+    #themeSelect option{color:var(--text);background:#fff}
     .toolbar-actions{padding:12px 14px;margin-bottom:12px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
     .action-group{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
     .action-group+.action-group{padding-left:14px;border-left:1px solid var(--border)}
@@ -1790,6 +1790,150 @@ th{
 }
 .install-app-action.hidden{display:none!important}
 
+
+/* =========================================================
+   Modern Super Admin branch switcher
+   Replaces the browser-native select menu with app-matched UI.
+   ========================================================= */
+.branch-switcher{
+  position:relative;
+  flex:0 0 auto;
+}
+.branch-switcher-trigger{
+  min-height:38px;
+  max-width:220px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:7px 10px;
+  border:1px solid rgba(255,255,255,.20);
+  background:rgba(255,255,255,.10);
+  color:#fff;
+  border-radius:11px;
+  font-size:11px;
+  font-weight:850;
+  cursor:pointer;
+  transition:background .14s ease,border-color .14s ease,transform .14s ease;
+}
+.branch-switcher-trigger:hover{
+  background:rgba(255,255,255,.16);
+  border-color:rgba(255,255,255,.30);
+}
+.branch-switcher-trigger:active{transform:translateY(1px)}
+.branch-switcher-icon{
+  width:22px;
+  height:22px;
+  flex:0 0 auto;
+  display:grid;
+  place-items:center;
+  border-radius:7px;
+  background:rgba(255,255,255,.12);
+  font-size:12px;
+}
+.branch-switcher-label{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.branch-switcher-chevron{
+  margin-left:auto;
+  opacity:.75;
+  transition:transform .14s ease;
+}
+.branch-switcher-trigger[aria-expanded="true"] .branch-switcher-chevron{
+  transform:rotate(180deg);
+}
+.branch-switcher-menu{
+  position:absolute;
+  right:0;
+  top:calc(100% + 8px);
+  width:240px;
+  padding:8px;
+  background:#fff;
+  color:var(--ink);
+  border:1px solid var(--border);
+  border-radius:14px;
+  box-shadow:0 18px 45px rgba(10,49,41,.20);
+  z-index:150;
+}
+.branch-switcher-menu.hidden{display:none}
+.branch-switcher-menu-title{
+  padding:6px 8px 8px;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:#81908c;
+}
+.branch-switcher-option{
+  width:100%;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  min-height:42px;
+  border:0;
+  background:transparent;
+  border-radius:9px;
+  padding:9px 10px;
+  text-align:left;
+  cursor:pointer;
+  color:var(--ink);
+  font:inherit;
+  font-size:12px;
+  font-weight:750;
+}
+.branch-switcher-option:hover{
+  background:#f3f7f5;
+}
+.branch-switcher-option.active{
+  background:var(--mint);
+  color:var(--green2);
+}
+.branch-switcher-option-mark{
+  width:22px;
+  height:22px;
+  flex:0 0 auto;
+  display:grid;
+  place-items:center;
+  border-radius:7px;
+  background:#edf7f3;
+  color:var(--green2);
+  font-size:10px;
+  font-weight:900;
+}
+.branch-switcher-option-name{
+  min-width:0;
+  flex:1;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.branch-switcher-check{
+  margin-left:auto;
+  color:var(--green);
+  font-weight:950;
+  opacity:0;
+}
+.branch-switcher-option.active .branch-switcher-check{opacity:1}
+
+@media(max-width:850px){
+  .branch-switcher-trigger{max-width:165px}
+  .branch-switcher-menu{
+    position:fixed;
+    right:12px;
+    top:70px;
+    width:min(280px,calc(100vw - 24px));
+  }
+}
+@media(max-width:560px){
+  .branch-switcher-trigger{
+    max-width:132px;
+    padding:7px 9px;
+  }
+  .branch-switcher-icon{display:none}
+}
+
 @media(max-width:850px){
   /* Main navigation becomes a drawer instead of a long horizontal strip. */
   .wrap > .tabs{display:none!important}
@@ -1814,11 +1958,6 @@ th{
   }
   .topbar .spacer{min-width:0}
 
-  /* Branch picker gets a friendlier phone width. */
-  #branchSwitcher{
-    max-width:150px;
-    min-width:112px;
-  }
 }
 
 @media(max-width:560px){
@@ -1826,7 +1965,6 @@ th{
   .mobile-nav-trigger{padding:7px 11px}
   .topbar .brand{max-width:112px}
   #activeBranchChip{display:none!important}
-  #branchSwitcher{max-width:126px}
 
   /* Installed mobile app: preserve app-like safe spacing. */
   @media(display-mode:standalone){
@@ -1968,7 +2106,15 @@ th{
       <span class="topbar-logo-wrap"><img src="logo.png?v=e5a4019a7248" alt="MG Bayan Lepas logo" class="topbar-logo"></span>
       <div class="brand">MG Bayan Lepas<small id="brandSubtitle">Mintygreen</small></div>
 <div class="spacer"></div>
-<select id="branchSwitcher" class="superadmin-only hidden" style="border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;border-radius:8px;padding:7px 9px;font-size:12px;font-weight:700"></select>
+<div id="branchSwitcherWrap" class="branch-switcher superadmin-only hidden">
+  <button id="branchSwitcherBtn" class="branch-switcher-trigger" type="button" aria-expanded="false" aria-haspopup="menu" title="Switch branch">
+    <span class="branch-switcher-icon" aria-hidden="true">⌂</span>
+    <span id="branchSwitcherLabel" class="branch-switcher-label">Select Branch</span>
+    <span class="branch-switcher-chevron" aria-hidden="true">⌄</span>
+  </button>
+  <div id="branchSwitcherMenu" class="branch-switcher-menu hidden" role="menu" aria-label="Switch branch"></div>
+</div>
+<select id="branchSwitcher" class="hidden" aria-hidden="true" tabindex="-1"></select>
 <button id="mobileNavBtn" class="mobile-nav-trigger" type="button" aria-label="Open navigation menu" aria-expanded="false">
   <span class="mobile-nav-trigger-icon" aria-hidden="true"></span>
   <span class="mobile-nav-trigger-label">Menu</span>
@@ -7619,23 +7765,110 @@ function updateBranchChip() {
   const subtitle = $('brandSubtitle');
   if (subtitle) subtitle.textContent = name ? `${name} · Mintygreen` : 'Mintygreen';
 }
+async function switchActiveBranch(branchId) {
+  if (!branchId || branchId === currentBranchId) {
+    closeBranchSwitcher();
+    return;
+  }
+
+  currentBranchId = branchId;
+  localStorage.setItem('mgbl_active_branch', currentBranchId);
+
+  const hiddenSelect = $('branchSwitcher');
+  if (hiddenSelect) hiddenSelect.value = currentBranchId;
+
+  updateBranchChip();
+  renderBranchSwitcher();
+
+  await Promise.all([loadResidents(), loadItems()]);
+  renderSelectors();
+  renderResidentList();
+  renderBranchList();
+  await loadRecurring();
+  renderCalendar();
+
+  if (chargesDisplayMode === 'daily') {
+    await loadDailyEntry();
+  }
+
+  toast(`Switched to ${branches.find(b => b.id === currentBranchId)?.name || 'branch'}`);
+}
+
+function closeBranchSwitcher() {
+  const menu = $('branchSwitcherMenu');
+  const btn = $('branchSwitcherBtn');
+  if (menu) menu.classList.add('hidden');
+  if (btn) btn.setAttribute('aria-expanded', 'false');
+}
+
 function renderBranchSwitcher() {
-  const sel = $('branchSwitcher');
-  if (!sel) return;
-  sel.innerHTML = branches.map(b =>
-    `<option value="${b.id}">${esc(b.name)}</option>`
-  ).join('');
-  if (currentBranchId) sel.value = currentBranchId;
-  sel.onchange = async () => {
-    currentBranchId = sel.value;
-    localStorage.setItem('mgbl_active_branch', currentBranchId);
-    updateBranchChip();
-    await Promise.all([loadResidents(), loadItems()]);
-    renderSelectors(); renderResidentList();
-    await loadRecurring(); renderCalendar();
-    if(chargesDisplayMode==='daily') await loadDailyEntry();
-    toast(`Switched to ${branches.find(b => b.id === currentBranchId)?.name || 'branch'}`);
-  };
+  const wrap = $('branchSwitcherWrap');
+  const btn = $('branchSwitcherBtn');
+  const label = $('branchSwitcherLabel');
+  const menu = $('branchSwitcherMenu');
+  const hiddenSelect = $('branchSwitcher');
+
+  if (!wrap || !btn || !label || !menu) return;
+
+  const activeBranch = branches.find(b => b.id === currentBranchId);
+  label.textContent = activeBranch?.name || 'Select Branch';
+  btn.title = activeBranch?.name ? `Current branch: ${activeBranch.name}` : 'Switch branch';
+
+  menu.innerHTML = `
+    <div class="branch-switcher-menu-title">Switch Branch</div>
+    ${branches.map(b => `
+      <button
+        type="button"
+        class="branch-switcher-option${b.id === currentBranchId ? ' active' : ''}"
+        data-branch-id="${b.id}"
+        role="menuitem"
+        aria-current="${b.id === currentBranchId ? 'true' : 'false'}"
+        title="${esc(b.name)}"
+      >
+        <span class="branch-switcher-option-mark">${esc((b.name || 'B').trim().charAt(0).toUpperCase())}</span>
+        <span class="branch-switcher-option-name">${esc(b.name)}</span>
+        <span class="branch-switcher-check" aria-hidden="true">✓</span>
+      </button>
+    `).join('')}
+  `;
+
+  // Keep the old select silently in sync in case any older code still reads it.
+  if (hiddenSelect) {
+    hiddenSelect.innerHTML = branches.map(b =>
+      `<option value="${b.id}">${esc(b.name)}</option>`
+    ).join('');
+    if (currentBranchId) hiddenSelect.value = currentBranchId;
+  }
+
+  menu.querySelectorAll('[data-branch-id]').forEach(option => {
+    option.addEventListener('click', async e => {
+      e.stopPropagation();
+      const branchId = option.dataset.branchId;
+      closeBranchSwitcher();
+      await switchActiveBranch(branchId);
+    });
+  });
+
+  if (btn.dataset.ready !== '1') {
+    btn.dataset.ready = '1';
+
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const opening = menu.classList.contains('hidden');
+      menu.classList.toggle('hidden', !opening);
+      btn.setAttribute('aria-expanded', opening ? 'true' : 'false');
+    });
+
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.branch-switcher')) {
+        closeBranchSwitcher();
+      }
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeBranchSwitcher();
+    });
+  }
 }
 function renderBranchList() {
   const el = $('branchList');
