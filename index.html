@@ -4121,17 +4121,21 @@ setStatus(
     'ok'
   );
 }function groupItems(){const order=['Stock','Machine Rental','Package','Service'];return order.map(c=>[c,items.filter(i=>i.category===c)]).filter(x=>x[1].length)}
-function isRecurringReadOnlyItem(item, residentId){
-  if(!item || !residentId) return false;
-  // Read-only ONLY when THIS resident has an active recurring charge for
-  // THIS item — not just because the item's category is normally recurring.
-  // (Previously this blanket-locked every Package/Service/Machine Rental
-  // item for every resident, even ones with no recurring charge at all.)
-  return recurring.some(r =>
-    r.item_id === item.id &&
-    r.resident_id === residentId &&
-    r.active !== false
+function isRecurringReadOnlyItem(item){
+  if(!item) return false;
+
+  // Prevent accidental double charging:
+  // Machine Rental, Package and Service items are always managed through
+  // Monthly Packages and are read-only in both Daily Entry and Master Calendar.
+  const recurringCategory = ['Machine Rental','Package','Service'].includes(
+    String(item.category || '').trim()
   );
+
+  const hasRecurringRecord = recurring.some(r =>
+    r.item_id === item.id
+  );
+
+  return recurringCategory || hasRecurringRecord;
 }
 
 function getCalendarCategoryNames() {
@@ -4303,10 +4307,9 @@ function renderCalendar() {
       let rowTotal = 0;
       const isRecurringCategory = isRecurringReadOnlyItem(it, rid);
 
-      // Monthly Package / Machine Rental / Service rows are controlled only from
-      // the Monthly Packages tab — but ONLY for the resident who actually has
-      // an active recurring charge for this item. Other residents can still
-      // enter a one-off manual charge for the same item.
+      // Machine Rental / Package / Service rows are always read-only here to
+      // prevent accidental double charging. Actual recurring amounts are still
+      // calculated only from recurring records assigned to the selected resident.
       const itemRecurringCharges = isRecurringCategory
         ? recurring.filter(r => r.item_id === it.id && r.resident_id === rid)
         : [];
