@@ -3551,6 +3551,7 @@ function showDailySaveToast(message,state='saved'){
 
 async function loadDailyEntry(){
   const rid = $('dailyResidentSelect')?.value || $('residentSelect')?.value || '';
+  await loadBillingCycleStatus(rid);
   dailySelectedDate = clampDailyDateToCycle(dailySelectedDate || formatDateISO(new Date()));
   if($('dailyDateDisplay')) $('dailyDateDisplay').textContent = formatDailyDisplayDate(dailySelectedDate);
 
@@ -8078,11 +8079,12 @@ function applyRoleAccess() {
     }
   }
 }
-async function loadBillingCycleStatus() {
+async function loadBillingCycleStatus(residentId = null) {
 
   const month = $('monthPicker').value;
+  const rid = residentId || $('residentSelect')?.value || '';
 
-  if (!month) {
+  if (!month || !rid) {
     currentCycleLocked = false;
     applyBillingCycleStatus();
     return;
@@ -8093,6 +8095,7 @@ async function loadBillingCycleStatus() {
     .select('is_locked')
     .eq('billing_month', month)
     .eq('branch_id', currentBranchId)
+    .eq('resident_id', rid)
     .maybeSingle();
 
   if (error) {
@@ -8159,6 +8162,10 @@ $('cycleLockBtn').onclick = async () => {
     return toast('Select a billing cycle first');
   }
 
+  const residentId = $('residentSelect')?.value || '';
+  if (!residentId) return toast('Select a resident first');
+  const residentName = residents.find(r => r.id === residentId)?.name || 'this resident';
+
   const cycle =
     getBillingCycle(month);
 
@@ -8173,7 +8180,7 @@ $('cycleLockBtn').onclick = async () => {
   if (currentCycleLocked) {
 
     const ok = await appConfirm(
-      `Unlock ${month} billing cycle?\n\n` +
+      `Unlock ${month} billing cycle for ${residentName}?\n\n` +
       `${formatShortDate(cycle.startDate)} – ` +
       `${formatShortDate(cycle.endDate)}\n\n` +
       `Charges can be edited again after unlocking.`
@@ -8192,13 +8199,14 @@ $('cycleLockBtn').onclick = async () => {
         updated_at: new Date().toISOString()
       })
       .eq('billing_month', month)
-      .eq('branch_id', currentBranchId);
+      .eq('branch_id', currentBranchId)
+      .eq('resident_id', residentId);
 
     if (error) {
       return toast(error.message);
     }
 
-    toast('Billing cycle unlocked');
+    toast(`Billing cycle unlocked for ${residentName}`);
 
   }
 
@@ -8209,7 +8217,7 @@ $('cycleLockBtn').onclick = async () => {
   else {
 
     const ok = await appConfirm(
-      `Close ${month} billing cycle?\n\n` +
+      `Close ${month} billing cycle for ${residentName}?\n\n` +
       `${formatShortDate(cycle.startDate)} – ` +
       `${formatShortDate(cycle.endDate)}\n\n` +
       `Once closed, nobody can change charges until an Admin unlocks it.`
@@ -8224,6 +8232,7 @@ $('cycleLockBtn').onclick = async () => {
       .upsert({
         billing_month: month,
         branch_id: currentBranchId,
+        resident_id: residentId,
         cycle_start: cycle.start,
         cycle_end: cycle.end,
         is_locked: true,
@@ -8231,14 +8240,14 @@ $('cycleLockBtn').onclick = async () => {
         locked_by: currentUser.id,
         updated_at: new Date().toISOString()
       }, {
-        onConflict: 'billing_month,branch_id'
+        onConflict: 'billing_month,branch_id,resident_id'
       });
 
     if (error) {
       return toast(error.message);
     }
 
-    toast('Billing cycle closed');
+    toast(`Billing cycle closed for ${residentName}`);
   }
 
   await loadBillingCycleStatus();
