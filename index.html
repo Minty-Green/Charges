@@ -881,7 +881,7 @@
             <div style="display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap">
               <div>
                 <h3 style="margin-bottom:4px">Existing Staff</h3>
-                <p class="note" style="margin:0">View staff accounts and, as Super Admin, change their branch or role.</p>
+                <p class="note" style="margin:0">View staff accounts and, as Super Admin, manage display names and access separately.</p>
               </div>
               <button id="refreshStaffBtn" class="btn btn-light btn-compact" style="border:1px solid var(--border)">Refresh</button>
             </div>
@@ -5969,7 +5969,7 @@ async function loadStaffList() {
       ? '<span class="badge">READY</span>'
       : '<span class="badge" style="background:#fff4d8;color:#8a5a00">SETUP PENDING</span>';
 
-    const canManage = currentUserRole === 'super_admin' && p.id !== currentUser?.id;
+    const canManage = currentUserRole === 'super_admin' && p.id !== currentUser?.id && p.role !== 'super_admin';
 
     return `
       <div class="row" style="grid-template-columns:1fr auto">
@@ -5980,6 +5980,7 @@ async function loadStaffList() {
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
           ${setupBadge}
           ${canManage ? `
+            <button class="btn btn-light btn-compact" style="border:1px solid var(--border)" onclick="editStaffDisplayName('${p.id}')">Edit Name</button>
             <button class="btn btn-light btn-compact" style="border:1px solid var(--border)" onclick="editStaffAccess('${p.id}')">Edit Access</button>
             <button class="btn btn-light btn-compact" style="border:1px solid var(--border)" onclick="sendStaffPasswordReset('${p.id}')">Reset Password</button>
           ` : ''}
@@ -5988,6 +5989,52 @@ async function loadStaffList() {
     `;
   }).join('');
 }
+
+window.editStaffDisplayName = async id => {
+  if (currentUserRole !== 'super_admin') {
+    toast('Super admin access required');
+    return;
+  }
+
+  const staff = staffProfiles.find(p => p.id === id);
+  if (!staff) return;
+
+  if (staff.id === currentUser?.id) {
+    toast('Use Settings → Account Profile to change your own display name');
+    return;
+  }
+
+  const currentDisplayName = (staff.display_name || '').trim() || fallbackDisplayName(staff.email || '');
+  const answer = prompt(
+    `Edit Display Name\n\nLinked email (read only): ${staff.email || '-'}\n\nDisplay Name:`,
+    currentDisplayName
+  );
+
+  if (answer === null) return;
+
+  const newDisplayName = answer.trim();
+  if (!newDisplayName) {
+    toast('Display name cannot be empty');
+    return;
+  }
+  if (newDisplayName.length > 80) {
+    toast('Display name must be 80 characters or fewer');
+    return;
+  }
+
+  const { error } = await sb.rpc('set_profile_display_name', {
+    target_user_id: id,
+    new_display_name: newDisplayName
+  });
+
+  if (error) {
+    toast(error.message);
+    return;
+  }
+
+  toast('Display name updated');
+  await loadStaffList();
+};
 
 window.editStaffAccess = async id => {
   if (currentUserRole !== 'super_admin') {
@@ -6003,31 +6050,11 @@ window.editStaffAccess = async id => {
     return;
   }
 
-  // Email stays linked to the Auth account and is intentionally not editable here.
-  // Super Admin can update the staff member's display name together with access settings.
-  const currentDisplayName = (staff.display_name || '').trim() || fallbackDisplayName(staff.email || '');
-  const displayNameAnswer = prompt(
-    `Edit staff profile\n\nLinked email (read only): ${staff.email || '-'}\n\nDisplay Name / Username:`,
-    currentDisplayName
-  );
-
-  if (displayNameAnswer === null) return;
-
-  const newDisplayName = displayNameAnswer.trim();
-  if (!newDisplayName) {
-    toast('Display name cannot be empty');
-    return;
-  }
-  if (newDisplayName.length > 80) {
-    toast('Display name must be 80 characters or fewer');
-    return;
-  }
-
   const branchOptions = branches.map((b, i) => `${i + 1}. ${b.name}`).join('\n');
   const currentBranchIndex = Math.max(0, branches.findIndex(b => b.id === staff.branch_id));
 
   const branchAnswer = prompt(
-    `Edit staff access for ${newDisplayName}\nLinked email (read only): ${staff.email || '-'}\n\n${branchOptions}\n\nEnter branch number:`,
+    `Edit Access\n\nStaff: ${(staff.display_name || '').trim() || fallbackDisplayName(staff.email || '')}\nLinked email (read only): ${staff.email || '-'}\n\n${branchOptions}\n\nEnter branch number:`,
     String(currentBranchIndex + 1)
   );
 
@@ -6055,21 +6082,21 @@ window.editStaffAccess = async id => {
     return;
   }
 
-  const { error } = await sb
-    .from('profiles')
-    .update({
-      display_name: newDisplayName,
-      branch_id: selectedBranch.id,
-      role: newRole
-    })
-    .eq('id', id);
+  const unchangedDisplayName = (staff.display_name || '').trim() || fallbackDisplayName(staff.email || '');
+
+  const { error } = await sb.rpc('update_staff_profile_admin', {
+    target_user_id: id,
+    new_display_name: unchangedDisplayName,
+    new_branch_id: selectedBranch.id,
+    new_role: newRole
+  });
 
   if (error) {
     toast(error.message);
     return;
   }
 
-  toast('Staff profile and access updated');
+  toast('Staff access updated');
   await loadStaffList();
 };
 
