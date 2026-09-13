@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-title" content="MG Bayan Lepas" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.min.js"></script>
   <style>
     :root{--green:#176b5b;--green2:#0f5548;--mint:#eaf6f3;--bg:#f4f7f6;--card:#fff;--text:#20302c;--muted:#6c7a76;--border:#dbe4e1;--red:#b42318;--yellow:#8a5b00;--shadow:0 8px 24px rgba(25,70,60,.08)}
     *{box-sizing:border-box} html{overflow-x:hidden} body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;width:100%}
@@ -2917,15 +2917,208 @@ $('exportBtn').onclick = () => {
   const ws =
     XLSX.utils.aoa_to_sheet(aoa);
 
+  const lastColIndex = billingDates.length + 3;
+  const tableHeaderRow = 6; // zero-based; Excel row 7
+
   ws['!cols'] = [
-    { wch: 32 },
-    { wch: 10 },
+    { wch: 36 },
     { wch: 12 },
-    ...Array(billingDates.length).fill({
-      wch: 4
-    }),
-    { wch: 14 }
+    { wch: 14 },
+    ...Array.from({ length: billingDates.length }, () => ({ wch: 5 })),
+    { wch: 16 }
   ];
+
+  ws['!rows'] = aoa.map((row, idx) => {
+    if (idx === 0) return { hpt: 26 };
+    if (idx === tableHeaderRow) return { hpt: 24 };
+    if (!row || row.length === 0 || row.every(v => v === '' || v == null)) return { hpt: 8 };
+    return { hpt: 20 };
+  });
+
+  // Freeze top information/header area and Item / Unit / Price columns.
+  ws['!freeze'] = {
+    xSplit: 3,
+    ySplit: 7,
+    topLeftCell: 'D8',
+    activePane: 'bottomRight',
+    state: 'frozen'
+  };
+
+  const border = {
+    top: { style: 'thin', color: { rgb: 'D9E2E1' } },
+    bottom: { style: 'thin', color: { rgb: 'D9E2E1' } },
+    left: { style: 'thin', color: { rgb: 'D9E2E1' } },
+    right: { style: 'thin', color: { rgb: 'D9E2E1' } }
+  };
+
+  const titleStyle = {
+    font: { bold: true, sz: 16, color: { rgb: '1F5A4B' } },
+    alignment: { horizontal: 'left', vertical: 'center' }
+  };
+
+  const infoLabelStyle = {
+    font: { bold: true, color: { rgb: '355B52' } },
+    fill: { fgColor: { rgb: 'EEF5F3' } },
+    alignment: { vertical: 'center' },
+    border
+  };
+
+  const infoValueStyle = {
+    alignment: { vertical: 'center' },
+    border
+  };
+
+  const headerStyle = {
+    font: { bold: true, color: { rgb: 'FFFFFF' } },
+    fill: { fgColor: { rgb: '2E6A5B' } },
+    alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+    border
+  };
+
+  const categoryStyle = {
+    font: { bold: true, color: { rgb: '244D43' } },
+    fill: { fgColor: { rgb: 'DDEDE8' } },
+    alignment: { horizontal: 'left', vertical: 'center' },
+    border
+  };
+
+  const recurringHeaderStyle = {
+    font: { bold: true, color: { rgb: '244D43' } },
+    fill: { fgColor: { rgb: 'E1EEEB' } },
+    alignment: { horizontal: 'left', vertical: 'center' },
+    border
+  };
+
+  const grandTotalStyle = {
+    font: { bold: true, sz: 11, color: { rgb: '173F35' } },
+    fill: { fgColor: { rgb: 'D6EAE4' } },
+    alignment: { vertical: 'center' },
+    border
+  };
+
+  const bandFillA = 'FFFFFF';
+  const bandFillB = 'F6FAF9';
+  let dataBandIndex = 0;
+
+  function getExportCell(r, c) {
+    const addr = XLSX.utils.encode_cell({ r, c });
+    if (!ws[addr]) ws[addr] = { t: 's', v: '' };
+    return ws[addr];
+  }
+
+  function styleExportRow(r, style) {
+    for (let c = 0; c <= lastColIndex; c++) {
+      getExportCell(r, c).s = style;
+    }
+  }
+
+  // Workbook title
+  getExportCell(0, 0).s = titleStyle;
+  ws['!merges'] = ws['!merges'] || [];
+  ws['!merges'].push({
+    s: { r: 0, c: 0 },
+    e: { r: 0, c: lastColIndex }
+  });
+
+  // Resident information
+  for (let r = 1; r <= 4; r++) {
+    getExportCell(r, 0).s = infoLabelStyle;
+    getExportCell(r, 1).s = infoValueStyle;
+  }
+
+  // Table header
+  for (let c = 0; c <= lastColIndex; c++) {
+    getExportCell(tableHeaderRow, c).s = headerStyle;
+  }
+  getExportCell(tableHeaderRow, 0).s = {
+    ...headerStyle,
+    alignment: { horizontal: 'left', vertical: 'center', wrapText: true }
+  };
+
+  // Body, category bands and recurring rows
+  for (let r = tableHeaderRow + 1; r < aoa.length; r++) {
+    const row = aoa[r] || [];
+    const first = row[0];
+    const isBlank = row.length === 0 || row.every(v => v === '' || v == null);
+    const isRecurringHeader = first === 'RECURRING MONTHLY CHARGES';
+    const isGrandTotal = first === 'GRAND TOTAL';
+    const isSectionHeader =
+      !isBlank &&
+      !isRecurringHeader &&
+      !isGrandTotal &&
+      row.slice(1).every(v => v === '' || v == null);
+
+    if (isBlank) continue;
+
+    if (isRecurringHeader || isSectionHeader) {
+      styleExportRow(r, isRecurringHeader ? recurringHeaderStyle : categoryStyle);
+      ws['!merges'].push({
+        s: { r, c: 0 },
+        e: { r, c: lastColIndex }
+      });
+      dataBandIndex = 0;
+      continue;
+    }
+
+    if (isGrandTotal) {
+      styleExportRow(r, grandTotalStyle);
+      const totalCell = getExportCell(r, lastColIndex);
+      totalCell.z = '"RM" #,##0.00';
+      totalCell.s = {
+        ...grandTotalStyle,
+        alignment: { horizontal: 'right', vertical: 'center' }
+      };
+      continue;
+    }
+
+    const fillRgb = dataBandIndex % 2 === 0 ? bandFillA : bandFillB;
+    dataBandIndex++;
+
+    for (let c = 0; c <= lastColIndex; c++) {
+      const cell = getExportCell(r, c);
+
+      cell.s = {
+        font: { color: { rgb: '24332F' } },
+        fill: { fgColor: { rgb: fillRgb } },
+        alignment: {
+          horizontal:
+            c === 0 ? 'left' :
+            (c === 1 || (c >= 3 && c < lastColIndex)) ? 'center' :
+            'right',
+          vertical: 'center',
+          wrapText: c === 0
+        },
+        border
+      };
+
+      if (c === 2 || c === lastColIndex) {
+        cell.z = '"RM" #,##0.00';
+      }
+    }
+  }
+
+  // Emphasize Total column
+  for (let r = tableHeaderRow + 1; r < aoa.length; r++) {
+    const row = aoa[r] || [];
+    const first = row[0];
+    const isBlank = row.length === 0 || row.every(v => v === '' || v == null);
+    const isSection =
+      !isBlank &&
+      first !== 'GRAND TOTAL' &&
+      row.slice(1).every(v => v === '' || v == null);
+
+    if (!isBlank && !isSection && first !== 'GRAND TOTAL') {
+      const cell = getExportCell(r, lastColIndex);
+      cell.s = {
+        ...cell.s,
+        font: { bold: true, color: { rgb: '244D43' } },
+        fill: { fgColor: { rgb: 'EEF5F3' } },
+        alignment: { horizontal: 'right', vertical: 'center' },
+        border
+      };
+      cell.z = '"RM" #,##0.00';
+    }
+  }
 
   const wb =
     XLSX.utils.book_new();
@@ -3207,6 +3400,10 @@ const recurringTotal = recurring.reduce(
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       fontSize: 5
+    },
+
+    alternateRowStyles: {
+      fillColor: [247, 250, 249]
     },
 
     columnStyles: {
@@ -3569,6 +3766,10 @@ $('exportFinancePdfBtn').onclick = () => {
         fontStyle: 'bold'
       },
 
+      alternateRowStyles: {
+        fillColor: [247, 250, 249]
+      },
+
       columnStyles: {
 
         0: {
@@ -3719,6 +3920,10 @@ for (const r of recurring) {
         fillColor: [46, 106, 91],
         textColor: [255, 255, 255],
         fontStyle: 'bold'
+      },
+
+      alternateRowStyles: {
+        fillColor: [247, 250, 249]
       },
 
       columnStyles: {
@@ -4086,6 +4291,10 @@ function renderCalendarPdfPage(doc, resident, month, cycle, billingDates, period
       fontStyle: 'bold',
       fontSize: 5
     },
+
+    alternateRowStyles: {
+      fillColor: [247, 250, 249]
+    },
     columnStyles: {
       0: { cellWidth: 31, halign: 'left' },
       1: { cellWidth: 10 },
@@ -4189,6 +4398,7 @@ function renderFinancePdfPage(doc, resident, month, cycle, periodText, entriesFo
       theme: 'grid',
       styles: { font: 'helvetica', fontSize: 8, cellPadding: 2, valign: 'middle' },
       headStyles: { fillColor: [46, 106, 91], textColor: [255, 255, 255], fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [247, 250, 249] },
       columnStyles: {
         0: { cellWidth: 70 },
         1: { cellWidth: 30, halign: 'center' },
@@ -4256,6 +4466,7 @@ function renderFinancePdfPage(doc, resident, month, cycle, periodText, entriesFo
       theme: 'grid',
       styles: { font: 'helvetica', fontSize: 8, cellPadding: 2 },
       headStyles: { fillColor: [46, 106, 91], textColor: [255, 255, 255], fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [247, 250, 249] },
       columnStyles: {
         0: { cellWidth: 105 },
         1: { cellWidth: 35 },
