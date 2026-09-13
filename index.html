@@ -1583,7 +1583,13 @@ $('recItem').innerHTML =
     .join('');
   
 $('recResident').onchange = loadRecurring;
-}$('recItem').onchange=()=>{const o=$('recItem').selectedOptions[0];if(o?.dataset.price)$('recAmount').value=Number(o.dataset.price).toFixed(2)};
+}$('recItem').onchange=()=>{
+  const o=$('recItem').selectedOptions[0];
+  if(o?.dataset.price){
+    $('recAmount').value=Number(o.dataset.price).toFixed(2);
+  }
+  loadRecurring();
+};
 $('reloadBtn').onclick=loadMonth;
 $('residentSelect').onchange=()=>{
   loadMonth();
@@ -2340,10 +2346,17 @@ async function loadRecurring() {
   }
 
 const selectedResidentId = $('recResident').value;
+const selectedItemId = $('recItem').value;
 
 const list = (data || []).filter(x =>
-  !selectedResidentId ||
-  x.resident_id === selectedResidentId
+  (
+    !selectedResidentId ||
+    x.resident_id === selectedResidentId
+  ) &&
+  (
+    !selectedItemId ||
+    x.item_id === selectedItemId
+  )
 );
 
   $('recurringList').innerHTML = list.length
@@ -2401,7 +2414,13 @@ const list = (data || []).filter(x =>
     : `
         <div class="row">
           <div>
-            <small>No recurring charges yet.</small>
+            <small>
+              ${
+                selectedResidentId || selectedItemId
+                  ? 'No matching recurring charges for the selected filter.'
+                  : 'No recurring charges yet.'
+              }
+            </small>
           </div>
         </div>
       `;
