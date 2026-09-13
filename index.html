@@ -129,6 +129,99 @@
     .daily-stepper{display:grid;grid-template-columns:40px 48px 40px;gap:6px;align-items:center}
     .daily-stepper button{height:40px;border:1px solid var(--border);border-radius:9px;background:#fff;font-size:20px;font-weight:800;cursor:pointer}
     .daily-stepper input{width:48px;height:40px;text-align:center;border:1px solid var(--border);border-radius:9px;font-weight:850;background:#fff}
+
+    .daily-search-wrap{
+      position:relative;
+      display:flex;
+      align-items:center;
+      margin-top:12px;
+      width:100%;
+    }
+    .daily-search{
+      width:100%;
+      min-height:42px;
+      padding:9px 36px;
+      border:1px solid var(--border);
+      border-radius:10px;
+      background:#fff;
+      color:var(--text);
+      font:inherit;
+      outline:none;
+    }
+    .daily-search:focus{
+      border-color:var(--green);
+      box-shadow:0 0 0 2px rgba(23,107,91,.08);
+    }
+    .daily-search-icon{
+      position:absolute;
+      left:12px;
+      color:#71807b;
+      font-size:16px;
+      pointer-events:none;
+    }
+    .daily-search-clear{
+      position:absolute;
+      right:7px;
+      width:28px;
+      height:28px;
+      border:0;
+      border-radius:7px;
+      background:transparent;
+      color:#71807b;
+      font-size:20px;
+      cursor:pointer;
+    }
+    .daily-search-clear:hover{
+      background:#edf3f1;
+      color:var(--green2);
+    }
+    .daily-search-status{
+      margin-top:8px;
+      padding:7px 10px;
+      border-radius:8px;
+      background:#f2f7f5;
+      color:#53635e;
+      font-size:11px;
+      font-weight:700;
+    }
+    .daily-existing-entry{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      width:100%;
+      padding:7px 8px;
+      border:0;
+      border-radius:7px;
+      background:transparent;
+      text-align:left;
+      color:inherit;
+      font:inherit;
+      cursor:pointer;
+    }
+    .daily-existing-entry:hover{
+      background:rgba(255,255,255,.65);
+    }
+    .daily-existing-entry:focus-visible{
+      outline:2px solid var(--green);
+      outline-offset:2px;
+    }
+    .daily-existing-entry .daily-existing-name{font-weight:700}
+    .daily-existing-entry .daily-existing-qty{
+      white-space:nowrap;
+      font-weight:800;
+      color:var(--green2);
+    }
+    .daily-search-hidden{display:none!important}
+    .daily-item.daily-jump-highlight{
+      animation:dailyJumpFlash 1.25s ease;
+      box-shadow:0 0 0 3px rgba(23,107,91,.16);
+    }
+    @keyframes dailyJumpFlash{
+      0%{background:#eaf6f2}
+      100%{background:#fff}
+    }
+
     .daily-existing{padding:12px 14px;background:var(--mint);border:1px solid var(--border);border-radius:10px;margin-top:12px}
     .daily-existing strong{display:block;margin-bottom:6px}
     .daily-existing-list{font-size:12px;color:var(--text);line-height:1.6}
@@ -563,6 +656,27 @@
             </div>
           </div>
 
+          <div class="daily-search-wrap">
+            <span class="daily-search-icon" aria-hidden="true">⌕</span>
+            <input
+              id="dailyItemSearch"
+              class="daily-search"
+              type="search"
+              placeholder="Search item..."
+              autocomplete="off"
+              aria-label="Search Daily Entry items"
+            >
+            <button
+              id="dailySearchClearBtn"
+              class="daily-search-clear"
+              type="button"
+              title="Clear search"
+              aria-label="Clear Daily Entry search"
+            >×</button>
+          </div>
+
+          <div id="dailySearchStatus" class="daily-search-status hidden"></div>
+
           <div id="dailyExisting" class="daily-existing hidden">
             <strong>Already entered for this date</strong>
             <div id="dailyExistingList" class="daily-existing-list"></div>
@@ -978,6 +1092,7 @@ let recurringOverrides = [];
 let recurringPriceHistory = [];
 let dailySelectedDate = formatDateISO(new Date());
 let dailyEntries = [];
+let dailyItemSearchText = '';
 let chargesDisplayMode = 'calendar';
 
 // Master Calendar display preferences only (no billing/export impact)
@@ -1576,6 +1691,60 @@ async function loadDailyEntry(){
   dailyEntries = data || [];
   renderDailyEntry();
 }
+
+function applyDailyEntrySearch(){
+  const search = dailyItemSearchText.trim().toLowerCase();
+  const categories = Array.from(document.querySelectorAll('#dailyEntryList .daily-category'));
+  let visibleCount = 0;
+
+  categories.forEach(category => {
+    const rows = Array.from(category.querySelectorAll('.daily-item'));
+    let visibleInCategory = 0;
+
+    rows.forEach(row => {
+      const itemName = (row.dataset.itemName || '').toLowerCase();
+      const matches = !search || itemName.includes(search);
+      row.classList.toggle('daily-search-hidden', !matches);
+      if(matches){
+        visibleCount++;
+        visibleInCategory++;
+      }
+    });
+
+    category.classList.toggle('daily-search-hidden', visibleInCategory === 0);
+  });
+
+  const status = $('dailySearchStatus');
+  if(status){
+    if(search){
+      status.textContent = `${visibleCount} item${visibleCount===1?'':'s'} matching “${dailyItemSearchText.trim()}”`;
+      status.classList.remove('hidden');
+    }else{
+      status.textContent = '';
+      status.classList.add('hidden');
+    }
+  }
+}
+
+function jumpToDailyItem(itemId){
+  let row = document.querySelector(`#dailyEntryList .daily-item[data-item-id="${itemId}"]`);
+  if(!row) return;
+
+  if(row.classList.contains('daily-search-hidden')){
+    dailyItemSearchText = '';
+    if($('dailyItemSearch')) $('dailyItemSearch').value = '';
+    applyDailyEntrySearch();
+    row = document.querySelector(`#dailyEntryList .daily-item[data-item-id="${itemId}"]`);
+  }
+
+  row.scrollIntoView({behavior:'smooth', block:'center'});
+  row.classList.remove('daily-jump-highlight');
+  requestAnimationFrame(() => {
+    row.classList.add('daily-jump-highlight');
+    setTimeout(() => row.classList.remove('daily-jump-highlight'), 1400);
+  });
+}
+
 function renderDailyEntry(){
   const list = $('dailyEntryList');
   if(!list) return;
@@ -1602,10 +1771,18 @@ function renderDailyEntry(){
       if(qty > 0){
         count++;
         total += amount;
-        existingLines.push(`${esc(it.name)} × ${qty}`);
+        existingLines.push({
+          itemId: it.id,
+          name: it.name,
+          qty
+        });
       }
       return `
-        <div class="daily-item">
+        <div
+          class="daily-item"
+          data-item-id="${it.id}"
+          data-item-name="${esc(it.name)}"
+        >
           <div class="daily-item-info">
             <strong>${esc(it.name)}</strong>
             <small>${esc(it.unit || '')}${it.price == null ? '' : ' · ' + money(it.price)}</small>
@@ -1626,7 +1803,17 @@ function renderDailyEntry(){
 
   if($('dailyExisting')){
     $('dailyExisting').classList.toggle('hidden', existingLines.length===0);
-    if($('dailyExistingList')) $('dailyExistingList').innerHTML = existingLines.map(x=>`<div>${x}</div>`).join('');
+    if($('dailyExistingList')) $('dailyExistingList').innerHTML = existingLines.map(x=>`
+      <button
+        class="daily-existing-entry"
+        type="button"
+        onclick="jumpToDailyItem('${x.itemId}')"
+        title="Jump to ${esc(x.name)}"
+      >
+        <span class="daily-existing-name">${esc(x.name)}</span>
+        <span class="daily-existing-qty">× ${Number(x.qty)}</span>
+      </button>
+    `).join('');
   }
 
   if($('dailyEntryCount')) $('dailyEntryCount').textContent = `${count} ${count===1?'entry':'entries'}`;
@@ -1639,6 +1826,8 @@ function renderDailyEntry(){
   document.querySelectorAll('.daily-stepper button').forEach(btn => {
     btn.disabled = currentCycleLocked;
   });
+
+  applyDailyEntrySearch();
 }
 async function saveDailyQty(itemId, qty){
   const rid = $('dailyResidentSelect')?.value;
@@ -3058,6 +3247,27 @@ window.deactivateItem=async id=>{if(!confirm('Deactivate this item? It will disa
 window.reactivateItem=async id=>{const {error}=await sb.from('items').update({active:true}).eq('id',id);if(error)return toast(error.message);await loadItems();await loadAllItems();renderSelectors();renderCalendar();toast('Item reactivated')};
 function renderItemList(){$('itemList').innerHTML=allItems.length?allItems.map(i=>`<div class="row"><div><strong>${esc(i.name)}</strong><br><small>${esc(i.category||'')} · ${esc(i.unit||'—')} · RM ${Number(i.price||0).toFixed(2)}</small></div><span class="badge" style="${i.active?'':'background:#fff0ef;color:var(--red)'}">${i.active?'ACTIVE':'INACTIVE'}</span><div style="display:flex;gap:6px"><button class="btn btn-light btn-compact" style="border:1px solid var(--border)" onclick="editItem('${i.id}')">Edit</button>${i.active?`<button class="btn btn-danger btn-compact" onclick="deactivateItem('${i.id}')">Deactivate</button>`:`<button class="btn btn-primary btn-compact" onclick="reactivateItem('${i.id}')">Reactivate</button>`}</div></div>`).join(''):'<div class="row"><small>No items yet.</small></div>'}
 
+
+
+const dailyItemSearchEl = $('dailyItemSearch');
+
+if(dailyItemSearchEl){
+  dailyItemSearchEl.addEventListener('input', () => {
+    dailyItemSearchText = dailyItemSearchEl.value || '';
+    applyDailyEntrySearch();
+  });
+}
+
+$('dailySearchClearBtn')?.addEventListener('click', () => {
+  dailyItemSearchText = '';
+  if(dailyItemSearchEl){
+    dailyItemSearchEl.value = '';
+    dailyItemSearchEl.focus();
+  }
+  applyDailyEntrySearch();
+});
+
+window.jumpToDailyItem = jumpToDailyItem;
 
 const calendarItemSearchEl = $('calendarItemSearch');
 
