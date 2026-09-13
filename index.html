@@ -3109,14 +3109,42 @@ $('exportBtn').onclick = () => {
 
     if (!isBlank && !isSection && first !== 'GRAND TOTAL') {
       const cell = getExportCell(r, lastColIndex);
+      const totalAmount = Number(cell.v) || 0;
       cell.s = {
         ...cell.s,
-        font: { bold: true, color: { rgb: '244D43' } },
+        font: { bold: totalAmount !== 0, color: { rgb: '244D43' } },
         fill: { fgColor: { rgb: 'EEF5F3' } },
         alignment: { horizontal: 'right', vertical: 'center' },
         border
       };
       cell.z = '"RM" #,##0.00';
+    }
+  }
+
+  // Make actual daily charge quantities bold; blank/zero entries stay normal.
+  for (let r = tableHeaderRow + 1; r < aoa.length; r++) {
+    const row = aoa[r] || [];
+    const first = row[0];
+    const isBlank = row.length === 0 || row.every(v => v === '' || v == null);
+    const isSection =
+      !isBlank &&
+      first !== 'GRAND TOTAL' &&
+      row.slice(1).every(v => v === '' || v == null);
+
+    if (isBlank || isSection || first === 'GRAND TOTAL') continue;
+
+    for (let c = 3; c < lastColIndex; c++) {
+      const cell = getExportCell(r, c);
+      const qty = Number(cell.v) || 0;
+
+      if (qty !== 0) {
+        cell.s = {
+          ...cell.s,
+          font: { ...(cell.s?.font || {}), bold: true, color: { rgb: '173F35' } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border
+        };
+      }
     }
   }
 
