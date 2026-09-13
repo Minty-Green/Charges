@@ -296,6 +296,30 @@
       background:#ffffff;
     }
 
+
+    /* Highlight today's date when it appears in the displayed billing cycle */
+    #calendarTable th.today-column{
+      background:#dff1eb;
+      box-shadow: inset 2px 0 0 #8fb9aa, inset -2px 0 0 #8fb9aa;
+      font-weight:900;
+    }
+
+    #calendarTable td.today-column:not(.recurring-date-cell){
+      background:#f1f8f5;
+      box-shadow: inset 2px 0 0 rgba(143,185,170,.55),
+                  inset -2px 0 0 rgba(143,185,170,.55);
+    }
+
+    #calendarTable td.today-column.recurring-date-cell{
+      background:#e4eeea;
+      box-shadow: inset 2px 0 0 rgba(143,185,170,.55),
+                  inset -2px 0 0 rgba(143,185,170,.55);
+    }
+
+    #calendarTable tbody tr:not(.section-row):hover > td.today-column:not(.recurring-date-cell){
+      background:#e7f3ef;
+    }
+
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -1726,6 +1750,7 @@ function renderCalendar() {
   const month = $('monthPicker').value || todayMonth();
   const billingDates = getBillingDates(month);
   const cycle = getBillingCycle(month);
+  const todayIso = formatDateISO(new Date());
   const rid = $('residentSelect').value;
 
   let h = `
@@ -1737,7 +1762,8 @@ function renderCalendar() {
   `;
 
   for (const d of billingDates) {
-    h += `<th title="${d.date}">${d.day}</th>`;
+    const isToday = d.date === todayIso;
+    h += `<th class="${isToday ? 'today-column' : ''}" title="${d.date}${isToday ? ' · Today' : ''}">${d.day}</th>`;
   }
 
   h += `
@@ -1754,7 +1780,7 @@ function renderCalendar() {
         <td class="item-col">${esc(cat)}</td>
         <td class="unit-col"></td>
         <td class="price-col"></td>
-        ${'<td></td>'.repeat(billingDates.length)}
+        ${billingDates.map(d => `<td class="${d.date === todayIso ? 'today-column' : ''}"></td>`).join('')}
         <td class="total-col"></td>
       </tr>
     `;
@@ -1865,7 +1891,7 @@ function renderCalendar() {
 
           h += `
             <td
-              class="recurring-date-cell"
+              class="recurring-date-cell ${date === todayIso ? 'today-column' : ''}"
               title="${markerTitle}"
               aria-label="${esc(it.name)} ${date} read only${subscriptionStartsToday ? ', subscription starts today' : ''}${activeFromToday ? ', active from today in this billing cycle' : ''}${subscriptionStopsToday ? ', subscription stops today' : ''}"
             >
@@ -1892,7 +1918,7 @@ function renderCalendar() {
           );
 
         h += `
-          <td>
+          <td class="${date === todayIso ? 'today-column' : ''}">
             <input
               class="qty ${q ? 'nonzero' : ''}"
               type="number"
