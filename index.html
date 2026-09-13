@@ -2177,6 +2177,17 @@ function getRecurringProrateTooltip(recurringCharge, billingMonth) {
   return `${money(details.normalAmount)} ÷ ${details.cycleDays} days × ${details.activeDays} active days = ${money(details.amount)} (daily rate ${money(dailyRate)})`;
 }
 
+
+function pdfNumericValue(value) {
+  if (value == null) return 0;
+  const cleaned = String(value)
+    .replace(/RM\s*/gi, '')
+    .replace(/,/g, '')
+    .replace(/[^0-9.-]/g, '');
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : 0;
+}
+
 function getRecurringFinanceNote(recurringCharge, billingMonth) {
   const details =
     getRecurringBillingDetails(
@@ -3462,6 +3473,27 @@ const recurringTotal = recurring.reduce(
       ) {
         data.cell.styles.halign = 'left';
       }
+
+      if (data.section === 'body') {
+        const lastCol = data.table.columns.length - 1;
+
+        // Daily quantity columns: bold only when there is an actual entry.
+        if (
+          data.column.index >= 3 &&
+          data.column.index < lastCol &&
+          pdfNumericValue(data.cell.raw) !== 0
+        ) {
+          data.cell.styles.fontStyle = 'bold';
+        }
+
+        // Total column: bold only when amount is non-zero.
+        if (
+          data.column.index === lastCol &&
+          pdfNumericValue(data.cell.raw) !== 0
+        ) {
+          data.cell.styles.fontStyle = 'bold';
+        }
+      }
     },
 
     margin: {
@@ -3824,6 +3856,26 @@ $('exportFinancePdfBtn').onclick = () => {
           halign: 'right'
         }
 
+      },
+
+      didParseCell: function(data) {
+        if (
+          data.section === 'body' &&
+          (data.column.index === 2 || data.column.index === 4) &&
+          pdfNumericValue(data.cell.raw) !== 0
+        ) {
+          data.cell.styles.fontStyle = 'bold';
+        }
+      },
+
+      didParseCell: function(data) {
+        if (
+          data.section === 'body' &&
+          data.column.index === 2 &&
+          pdfNumericValue(data.cell.raw) !== 0
+        ) {
+          data.cell.styles.fontStyle = 'bold';
+        }
       },
 
       margin: {
@@ -4333,6 +4385,25 @@ function renderCalendarPdfPage(doc, resident, month, cycle, billingDates, period
       if (data.section === 'body' && data.column.index === 0) {
         data.cell.styles.halign = 'left';
       }
+
+      if (data.section === 'body') {
+        const lastCol = data.table.columns.length - 1;
+
+        if (
+          data.column.index >= 3 &&
+          data.column.index < lastCol &&
+          pdfNumericValue(data.cell.raw) !== 0
+        ) {
+          data.cell.styles.fontStyle = 'bold';
+        }
+
+        if (
+          data.column.index === lastCol &&
+          pdfNumericValue(data.cell.raw) !== 0
+        ) {
+          data.cell.styles.fontStyle = 'bold';
+        }
+      }
     },
     margin: { left: 6, right: 6 }
   });
@@ -4433,6 +4504,24 @@ function renderFinancePdfPage(doc, resident, month, cycle, periodText, entriesFo
         2: { cellWidth: 15, halign: 'center' },
         3: { cellWidth: 28, halign: 'right' },
         4: { cellWidth: 30, halign: 'right' }
+      },
+      didParseCell: function(data) {
+        if (
+          data.section === 'body' &&
+          (data.column.index === 2 || data.column.index === 4) &&
+          pdfNumericValue(data.cell.raw) !== 0
+        ) {
+          data.cell.styles.fontStyle = 'bold';
+        }
+      },
+      didParseCell: function(data) {
+        if (
+          data.section === 'body' &&
+          data.column.index === 2 &&
+          pdfNumericValue(data.cell.raw) !== 0
+        ) {
+          data.cell.styles.fontStyle = 'bold';
+        }
       },
       margin: { left: 14, right: 14 }
     });
