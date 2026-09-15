@@ -55,9 +55,11 @@ context.buildFinanceSummaryWorkbook([
   { name: 'b', room: '2', usageTotal: 22, recurringTotal: 48.39, total: 22, locked: false }
 ], '2026-09');
 
-assert.deepEqual(Array.from(capturedData[8].slice(0, 5)), ['b', '2', 22, 48.39, 70.39]);
+assert.deepEqual(Array.from(capturedData[9].slice(0, 5)), ['b', '2', 22, 48.39, 70.39]);
 assert.deepEqual(Array.from(capturedData.at(-1).slice(0, 5)), ['TOTAL', '', 373.9, 48.39, 422.28999999999996]);
-assert.equal(capturedSheet.D9.z, '"RM" #,##0.00');
+assert.equal(capturedSheet.D10.z, '"RM" #,##0.00;[Red]-"RM" #,##0.00;-');
+assert.equal(capturedSheet.A8.s.fill.fgColor.rgb, '176B5B');
+assert.equal(capturedSheet.F10.s.alignment.horizontal, 'center');
 assert.equal(capturedWriteOptions.cellStyles, true);
 
-console.log('Finance Summary Excel regression check: 4/4 passed');
+console.log('Finance Summary Excel regression check: 6/6 passed');
