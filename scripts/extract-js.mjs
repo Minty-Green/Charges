@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 
+// One-time, guarded extraction of the main inline application script.
 const INDEX = new URL('../index.html', import.meta.url);
 const APP = new URL('../app.js', import.meta.url);
 const html = fs.readFileSync(INDEX, 'utf8');
