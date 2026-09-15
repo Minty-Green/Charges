@@ -61,4 +61,16 @@ assert.equal(itemUsage.residentRows[0].entryDays, 2);
 assert.equal(itemUsage.residentRows[0].total, 50);
 assert.equal(itemUsage.residentRows[1].quantity, 0);
 
-console.log('Management Analytics regression check: 11/11 passed');
+const packageUsage = context.aggregatePackageUsage(
+  ['2026-08', '2026-09'],
+  [{ id: 'r1', name: 'A' }, { id: 'r2', name: 'B' }],
+  [{ resident_id: 'r1', item_id: 'pkg1', start_date: '2026-07-01', end_date: null, amounts: { '2026-08': 40, '2026-09': 50 } }],
+  'pkg1'
+);
+assert.deepEqual(Array.from(packageUsage.monthlyRows, row => row.total), [40, 50]);
+assert.deepEqual(Array.from(packageUsage.monthlyRows, row => row.residents), [1, 1]);
+assert.equal(packageUsage.residentRows[0].cyclesBilled, 2);
+assert.equal(packageUsage.residentRows[0].current, true);
+assert.equal(packageUsage.residentRows[1].total, 0);
+
+console.log('Management Analytics regression check: 16/16 passed');

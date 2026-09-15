@@ -6,12 +6,17 @@ const APP_JS = new URL('../app.js', import.meta.url);
 const FINANCE_JS = new URL('../finance-reporting.js', import.meta.url);
 const MONTH_END_JS = new URL('../month-end-control.js', import.meta.url);
 const ANALYTICS_JS = new URL('../management-analytics.js', import.meta.url);
+const NAV_JS = new URL('../app-navigation.js', import.meta.url);
+const PAGES_JS = new URL('../app-pages.js', import.meta.url);
 const html = fs.readFileSync(INDEX, 'utf8');
 const appJs = fs.existsSync(APP_JS) ? fs.readFileSync(APP_JS, 'utf8') : '';
 const financeJs = fs.existsSync(FINANCE_JS) ? fs.readFileSync(FINANCE_JS, 'utf8') : '';
 const monthEndJs = fs.existsSync(MONTH_END_JS) ? fs.readFileSync(MONTH_END_JS, 'utf8') : '';
 const analyticsJs = fs.existsSync(ANALYTICS_JS) ? fs.readFileSync(ANALYTICS_JS, 'utf8') : '';
-const source = `${html}\n${appJs}\n${financeJs}\n${monthEndJs}\n${analyticsJs}`;
+const navJs = fs.existsSync(NAV_JS) ? fs.readFileSync(NAV_JS, 'utf8') : '';
+const pagesJs = fs.existsSync(PAGES_JS) ? fs.readFileSync(PAGES_JS, 'utf8') : '';
+const source = `${html}\n${navJs}\n${pagesJs}\n${appJs}\n${financeJs}\n${monthEndJs}\n${analyticsJs}`;
+const markupSource = source.replaceAll('\\"', '"');
 
 const checks = [];
 const pass = (name, detail = '') => checks.push({ name, ok: true, detail });
@@ -73,7 +78,7 @@ includes('Billing-cycle history table reference present', "from('billing_cycle_a
 includes('Closed-cycle history UI present', 'Closed-Cycle History');
 expect(
   'Closed-cycle history appears before charge history',
-  html.indexOf('id="cycleHistoryTable"') < html.indexOf('id="auditTable"')
+  markupSource.indexOf('id="cycleHistoryTable"') < markupSource.indexOf('id="auditTable"')
 );
 
 // --- Recurring charge / double-charge safeguards ---
@@ -161,6 +166,11 @@ if (analyticsJs.trim()) {
   includes('Analytics item usage includes zero-use residents', 'Residents With No Usage');
   includes('Analytics item usage Excel export present', 'exportItemUsageExcel');
   includes('Analytics item usage highest-first sorting present', 'Highest usage first');
+  includes('Analytics defaults to 12 billing cycles', '<option value="12">Last 12 cycles</option><option value="6">');
+  includes('Analytics recurring package analysis present', 'Recurring Package Analysis');
+  includes('Analytics recurring package Excel export present', 'exportPackageUsageExcel');
+  includes('Analytics management Excel report present', 'exportManagementExcel');
+  includes('Analytics management PDF report present', 'exportManagementPdf');
   includes('Analytics supports 6 and 12 billing cycles', 'Last 12 cycles');
   includes('Analytics uses billing-cycle boundaries', 'getBillingCycle');
   includes('Analytics uses recurring price history', 'getRecurringAmountForMonth');
@@ -171,7 +181,7 @@ if (analyticsJs.trim()) {
 }
 
 // --- Static HTML integrity ---
-const staticIds = [...html.matchAll(/\bid=["']([^"']+)["']/g)]
+const staticIds = [...markupSource.matchAll(/\bid=["']([^"']+)["']/g)]
   .map(m => m[1])
   .filter(id => !id.includes('${'));
 const duplicateIds = [...new Set(staticIds.filter((id, i) => staticIds.indexOf(id) !== i))];
@@ -180,7 +190,7 @@ expect('No duplicate static HTML IDs', duplicateIds.length === 0, duplicateIds.j
 // Element references may legitimately point to markup created at runtime by
 // app.js / finance-reporting.js. Build the resolution set from both static HTML
 // and literal id attributes inside JavaScript templates.
-const allLiteralIds = [...source.matchAll(/\bid=["']([^"']+)["']/g)]
+const allLiteralIds = [...markupSource.matchAll(/\bid=["']([^"']+)["']/g)]
   .map(m => m[1])
   .filter(id => !id.includes('${'));
 const idSet = new Set(allLiteralIds);
@@ -195,7 +205,7 @@ const declaredFunctions = new Set([
   ...[...source.matchAll(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?\(/g)].map(m => m[1]),
   ...[...source.matchAll(/\bwindow\.([A-Za-z_$][\w$]*)\s*=/g)].map(m => m[1])
 ]);
-const onclickFunctions = [...html.matchAll(/\bonclick=["']\s*([A-Za-z_$][\w$]*)\s*\(/g)].map(m => m[1]);
+const onclickFunctions = [...source.matchAll(/\bonclick=["']\s*([A-Za-z_$][\w$]*)\s*\(/g)].map(m => m[1]);
 const missingOnclick = [...new Set(onclickFunctions.filter(fn => !declaredFunctions.has(fn)))];
 expect('Inline onclick functions resolve', missingOnclick.length === 0, missingOnclick.join(', '));
 
@@ -210,10 +220,15 @@ try {
   if (financeJs.trim()) new vm.Script(financeJs, { filename: 'finance-reporting.js' });
   if (monthEndJs.trim()) new vm.Script(monthEndJs, { filename: 'month-end-control.js' });
   if (analyticsJs.trim()) new vm.Script(analyticsJs, { filename: 'management-analytics.js' });
+  if (navJs.trim()) new vm.Script(navJs, { filename: 'app-navigation.js' });
+  if (pagesJs.trim()) new vm.Script(pagesJs, { filename: 'app-pages.js' });
 } catch (err) {
   syntaxError = String(err?.stack || err);
 }
 expect('Application JavaScript syntax parses', !syntaxError, syntaxError);
+expect('index.html is split into smaller modules', html.split('\n').length < 250, `${html.split('\n').length} lines`);
+expect('Navigation module loads before app.js', html.indexOf('app-navigation.js') > -1 && html.indexOf('app-navigation.js') < html.indexOf('app.js'));
+expect('Page module loads before app.js', html.indexOf('app-pages.js') > -1 && html.indexOf('app-pages.js') < html.indexOf('app.js'));
 
 if (appJs.trim()) {
   expect('index.html references external app.js', /<script[^>]+src=["']app\.js["'][^>]*><\/script>/i.test(html));
