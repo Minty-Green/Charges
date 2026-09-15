@@ -4,10 +4,12 @@ import vm from 'node:vm';
 const INDEX = new URL('../index.html', import.meta.url);
 const APP_JS = new URL('../app.js', import.meta.url);
 const FINANCE_JS = new URL('../finance-reporting.js', import.meta.url);
+const MONTH_END_JS = new URL('../month-end-control.js', import.meta.url);
 const html = fs.readFileSync(INDEX, 'utf8');
 const appJs = fs.existsSync(APP_JS) ? fs.readFileSync(APP_JS, 'utf8') : '';
 const financeJs = fs.existsSync(FINANCE_JS) ? fs.readFileSync(FINANCE_JS, 'utf8') : '';
-const source = `${html}\n${appJs}\n${financeJs}`;
+const monthEndJs = fs.existsSync(MONTH_END_JS) ? fs.readFileSync(MONTH_END_JS, 'utf8') : '';
+const source = `${html}\n${appJs}\n${financeJs}\n${monthEndJs}`;
 
 const checks = [];
 const pass = (name, detail = '') => checks.push({ name, ok: true, detail });
@@ -104,6 +106,25 @@ if (financeJs.trim()) {
   expect('index.html references finance-reporting.css', /<link[^>]+href=["']finance-reporting\.css["'][^>]*>/i.test(html));
 }
 
+// --- Month-end finance control ---
+if (monthEndJs.trim()) {
+  includes('Month-End Closing module present', 'Month-End Closing');
+  includes('Month-End Finance Pack present', 'downloadFinancePack');
+  includes('Month-End reconciliation checks present', 'Finance Reconciliation Checks');
+  includes('Month-End uses charge_entries quantity column', 'resident_id,item_id,quantity,unit_price,charge_date');
+  excludes('Month-End does not use obsolete entry.qty', 'entry.qty');
+  includes('Month-End refreshes recurring pricing data', 'loadRecurringPricingData');
+  includes('Month-End role restriction present', "currentUserRole === 'admin' || currentUserRole === 'super_admin'");
+  includes('Month-End JSZip dependency present', 'jszip.min.js');
+  includes('Month-End resident finance PDFs present', 'renderFinancePdfPage');
+  includes('Month-End OPEN warning present', "code: 'OPEN'");
+  includes('Month-End zero-charge warning present', "code: 'ZERO'");
+  includes('Month-End recurring RM0 warning present', "code: 'RECURRING'");
+  expect('Month-End module is read-only', !/\.(?:insert|update|delete|upsert)\s*\(/.test(monthEndJs), 'Month-End control must not write billing data.');
+  expect('index.html references month-end-control.js', /<script[^>]+src=["']month-end-control\.js["'][^>]*><\/script>/i.test(html));
+  expect('index.html references month-end-control.css', /<link[^>]+href=["']month-end-control\.css["'][^>]*>/i.test(html));
+}
+
 // --- Static HTML integrity ---
 const staticIds = [...html.matchAll(/\bid=["']([^"']+)["']/g)]
   .map(m => m[1])
@@ -142,6 +163,7 @@ try {
   inlineScripts.forEach((js, i) => new vm.Script(js, { filename: `index-inline-${i + 1}.js` }));
   if (appJs.trim()) new vm.Script(appJs, { filename: 'app.js' });
   if (financeJs.trim()) new vm.Script(financeJs, { filename: 'finance-reporting.js' });
+  if (monthEndJs.trim()) new vm.Script(monthEndJs, { filename: 'month-end-control.js' });
 } catch (err) {
   syntaxError = String(err?.stack || err);
 }
