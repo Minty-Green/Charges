@@ -227,9 +227,7 @@
     try {
       // Refresh special-month overrides and permanent price history before recurring totals.
       if (typeof loadRecurringPricingData === 'function') await loadRecurringPricingData();
-      if (typeof loadRecurring === 'function') await loadRecurring();
-
-      const [entriesResult, cyclesResult] = await Promise.all([
+      const [entriesResult, cyclesResult, recurringResult] = await Promise.all([
         sb.from('charge_entries')
           .select('resident_id,quantity,unit_price,charge_date')
           .eq('branch_id', currentBranchId)
@@ -238,13 +236,20 @@
         sb.from('billing_cycles')
           .select('resident_id,is_locked')
           .eq('branch_id', currentBranchId)
-          .eq('billing_month', month)
+          .eq('billing_month', month),
+        sb.from('recurring_charges')
+          .select('*')
+          .eq('branch_id', currentBranchId)
+          .lte('start_date', cycle.end)
+          .or(`end_date.is.null,end_date.gte.${cycle.start}`)
       ]);
 
       if (entriesResult.error) throw entriesResult.error;
       if (cyclesResult.error) throw cyclesResult.error;
+      if (recurringResult.error) throw recurringResult.error;
 
       const entryRows = entriesResult.data || [];
+      const recurringRows = recurringResult.data || [];
       const lockMap = new Map((cyclesResult.data || []).map(row => [row.resident_id, !!row.is_locked]));
       const usageByResident = new Map();
 
@@ -255,7 +260,7 @@
 
       state.rows = (residents || []).map(resident => {
         const usageTotal = Number(usageByResident.get(resident.id) || 0);
-        const recurringTotal = (recurring || [])
+        const recurringTotal = recurringRows
           .filter(charge => charge.resident_id === resident.id)
           .reduce((sum, charge) => sum + Number(getRecurringAmountForMonth(charge, month) || 0), 0);
 
@@ -352,13 +357,14 @@
     return rows;
   }
 
-  function exportFinanceSummaryExcel() {
-    const rows = exportRowsOrWarn();
-    if (!rows) return;
-
-    const month = currentFinanceMonth();
-    const usage = rows.reduce((sum, row) => sum + row.usageTotal, 0);
-    const recurringTotal = rows.reduce((sum, row) => sum + row.recurringTotal, 0);
+  function buildFinanceSummaryWorkbook(rows, month) {
+    const exportRows = rows.map(row => {
+      const usageTotal = Number(row.usageTotal || 0);
+      const recurringTotal = Number(row.recurringTotal || 0);
+      return { ...row, usageTotal, recurringTotal, total: usageTotal + recurringTotal };
+    });
+    const usage = exportRows.reduce((sum, row) => sum + row.usageTotal, 0);
+    const recurringTotal = exportRows.reduce((sum, row) => sum + row.recurringTotal, 0);
     const grand = usage + recurringTotal;
     const data = [
       ['Mintygreen Healthcare'],
@@ -368,7 +374,7 @@
       ['Period', periodLabel(month)],
       [],
       ['Resident', 'Room / Ref', 'Usage Charges', 'Recurring Charges', 'Grand Total', 'Cycle Status'],
-      ...rows.map(row => [row.name, row.room || '', row.usageTotal, row.recurringTotal, row.total, row.locked ? 'LOCKED' : 'OPEN']),
+      ...exportRows.map(row => [row.name, row.room || '', row.usageTotal, row.recurringTotal, row.total, row.locked ? 'LOCKED' : 'OPEN']),
       [],
       ['TOTAL', '', usage, recurringTotal, grand, '']
     ];
@@ -381,10 +387,10 @@
       { s: { r: 2, c: 0 }, e: { r: 2, c: 5 } }
     ];
 
-    const headerStyle = { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '176B5B' } }, alignment: { horizontal: 'center' } };
+    const headerStyle = { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { patternType: 'solid', fgColor: { rgb: '176B5B' } }, alignment: { horizontal: 'center' } };
     const titleStyle = { font: { bold: true, sz: 16, color: { rgb: '176B5B' } }, alignment: { horizontal: 'left' } };
     const branchStyle = { font: { bold: true, sz: 11 } };
-    const totalStyle = { font: { bold: true }, fill: { fgColor: { rgb: 'EAF6F3' } } };
+    const totalStyle = { font: { bold: true }, fill: { patternType: 'solid', fgColor: { rgb: 'EAF6F3' } } };
 
     if (ws.A1) ws.A1.s = titleStyle;
     if (ws.A2) ws.A2.s = branchStyle;
@@ -397,21 +403,31 @@
       const address = XLSX.utils.encode_cell({ r: totalRow, c });
       if (ws[address]) ws[address].s = totalStyle;
     }
-    for (let r = 7; r < 7 + rows.length; r++) {
+    const currencyFormat = '"RM" #,##0.00';
+    for (let r = 7; r < 7 + exportRows.length; r++) {
       for (const c of [2, 3, 4]) {
         const address = XLSX.utils.encode_cell({ r, c });
-        if (ws[address]) ws[address].z = 'RM #,##0.00';
+        if (ws[address]) ws[address].z = currencyFormat;
       }
     }
     for (const c of [2, 3, 4]) {
       const address = XLSX.utils.encode_cell({ r: totalRow, c });
-      if (ws[address]) ws[address].z = 'RM #,##0.00';
+      if (ws[address]) ws[address].z = currencyFormat;
     }
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Finance Summary');
+    return XLSX.write(wb, { bookType: 'xlsx', type: 'array', cellStyles: true });
+  }
+
+  function exportFinanceSummaryExcel() {
+    const rows = exportRowsOrWarn();
+    if (!rows) return;
+
+    const month = currentFinanceMonth();
     const safeBranch = branchName().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'branch';
-    XLSX.writeFile(wb, `Finance-Summary-${safeBranch}-${month}.xlsx`);
+    const workbook = buildFinanceSummaryWorkbook(rows, month);
+    saveAs(new Blob([workbook], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `Finance-Summary-${safeBranch}-${month}.xlsx`);
   }
 
   function exportFinanceSummaryPdf() {

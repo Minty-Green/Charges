@@ -117,6 +117,9 @@ if (financeJs.trim()) {
   includes('Finance Summary PDF export present', 'exportFinanceSummaryPdf');
   includes('Finance Summary is Admin/Super Admin only', "currentUserRole === 'admin' || currentUserRole === 'super_admin'");
   includes('Finance Summary resident lock status present', 'Cycle Status');
+  includes('Finance Summary loads all cycle recurring charges', 'const recurringRows = recurringResult.data || []');
+  includes('Finance Summary Excel uses an Excel-safe RM format', `const currencyFormat = '"RM" #,##0.00'`);
+  includes('Finance Summary Excel writes cell styles explicitly', 'cellStyles: true');
   expect('index.html references finance-reporting.js', /<script[^>]+src=["']finance-reporting\.js["'][^>]*><\/script>/i.test(html));
   expect('index.html references finance-reporting.css', /<link[^>]+href=["']finance-reporting\.css["'][^>]*>/i.test(html));
 }
@@ -129,6 +132,7 @@ if (monthEndJs.trim()) {
   includes('Month-End uses charge_entries quantity column', 'resident_id,item_id,quantity,unit_price,charge_date');
   excludes('Month-End does not use obsolete entry.qty', 'entry.qty');
   includes('Month-End refreshes recurring pricing data', 'loadRecurringPricingData');
+  includes('Month-End loads all cycle recurring charges', 'const recurringRows = recurringResult.data || []');
   includes('Month-End role restriction present', "currentUserRole === 'admin' || currentUserRole === 'super_admin'");
   includes('Month-End JSZip dependency present', 'jszip.min.js');
   includes('Month-End resident finance PDFs present', 'renderFinancePdfPage');
