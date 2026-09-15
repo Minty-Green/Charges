@@ -32,6 +32,12 @@ includes('Password login flow present', 'signInWithPassword');
 includes('Password recovery flow present', 'resetPasswordForEmail');
 includes('Turnstile login flow present', 'turnstile');
 includes('Successful login activity logging present', 'SUCCESS');
+includes('Successful login audit uses an idempotency key', 'event_id: pending.eventId');
+includes('Successful login audit retries transient failures', 'const retryDelays = [0, 250, 750]');
+expect(
+  'Successful login audit clears only after a confirmed insert',
+  source.indexOf("if (!error || error.code === '23505')") < source.indexOf('clearPending();\n      return;', source.indexOf("if (!error || error.code === '23505')"))
+);
 includes('Failed-login Edge Function call present', 'log-failed-login');
 excludes('No public sign-up flow in frontend', '.signUp(');
 excludes('No custom same-as-current password restriction', 'different from your current password');
