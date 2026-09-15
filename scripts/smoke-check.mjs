@@ -5,11 +5,13 @@ const INDEX = new URL('../index.html', import.meta.url);
 const APP_JS = new URL('../app.js', import.meta.url);
 const FINANCE_JS = new URL('../finance-reporting.js', import.meta.url);
 const MONTH_END_JS = new URL('../month-end-control.js', import.meta.url);
+const ANALYTICS_JS = new URL('../management-analytics.js', import.meta.url);
 const html = fs.readFileSync(INDEX, 'utf8');
 const appJs = fs.existsSync(APP_JS) ? fs.readFileSync(APP_JS, 'utf8') : '';
 const financeJs = fs.existsSync(FINANCE_JS) ? fs.readFileSync(FINANCE_JS, 'utf8') : '';
 const monthEndJs = fs.existsSync(MONTH_END_JS) ? fs.readFileSync(MONTH_END_JS, 'utf8') : '';
-const source = `${html}\n${appJs}\n${financeJs}\n${monthEndJs}`;
+const analyticsJs = fs.existsSync(ANALYTICS_JS) ? fs.readFileSync(ANALYTICS_JS, 'utf8') : '';
+const source = `${html}\n${appJs}\n${financeJs}\n${monthEndJs}\n${analyticsJs}`;
 
 const checks = [];
 const pass = (name, detail = '') => checks.push({ name, ok: true, detail });
@@ -149,6 +151,21 @@ if (monthEndJs.trim()) {
   expect('index.html references month-end-control.css', /<link[^>]+href=["']month-end-control\.css["'][^>]*>/i.test(html));
 }
 
+// --- Management analytics ---
+if (analyticsJs.trim()) {
+  includes('Management Analytics module present', 'Management Analytics');
+  includes('Analytics monthly trend present', 'Monthly Charge Trend');
+  includes('Analytics category spending present', 'Category Spending');
+  includes('Analytics resident history present', 'Resident Charge History');
+  includes('Analytics supports 6 and 12 billing cycles', 'Last 12 cycles');
+  includes('Analytics uses billing-cycle boundaries', 'getBillingCycle');
+  includes('Analytics uses recurring price history', 'getRecurringAmountForMonth');
+  includes('Analytics is Admin/Super Admin only', "currentUserRole === 'admin' || currentUserRole === 'super_admin'");
+  expect('Management Analytics is read-only', !/\.(?:insert|update|delete|upsert)\s*\(/.test(analyticsJs), 'Analytics must not write billing data.');
+  expect('index.html references management-analytics.js', /<script[^>]+src=["']management-analytics\.js["'][^>]*><\/script>/i.test(html));
+  expect('index.html references management-analytics.css', /<link[^>]+href=["']management-analytics\.css["'][^>]*>/i.test(html));
+}
+
 // --- Static HTML integrity ---
 const staticIds = [...html.matchAll(/\bid=["']([^"']+)["']/g)]
   .map(m => m[1])
@@ -188,6 +205,7 @@ try {
   if (appJs.trim()) new vm.Script(appJs, { filename: 'app.js' });
   if (financeJs.trim()) new vm.Script(financeJs, { filename: 'finance-reporting.js' });
   if (monthEndJs.trim()) new vm.Script(monthEndJs, { filename: 'month-end-control.js' });
+  if (analyticsJs.trim()) new vm.Script(analyticsJs, { filename: 'management-analytics.js' });
 } catch (err) {
   syntaxError = String(err?.stack || err);
 }
