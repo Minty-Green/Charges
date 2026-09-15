@@ -225,11 +225,13 @@
     setLoading(true);
 
     try {
+      // Refresh special-month overrides and permanent price history before recurring totals.
+      if (typeof loadRecurringPricingData === 'function') await loadRecurringPricingData();
       if (typeof loadRecurring === 'function') await loadRecurring();
 
       const [entriesResult, cyclesResult] = await Promise.all([
         sb.from('charge_entries')
-          .select('resident_id,qty,unit_price,charge_date')
+          .select('resident_id,quantity,unit_price,charge_date')
           .eq('branch_id', currentBranchId)
           .gte('charge_date', cycle.start)
           .lte('charge_date', cycle.end),
@@ -247,7 +249,7 @@
       const usageByResident = new Map();
 
       entryRows.forEach(entry => {
-        const amount = Number(entry.qty || 0) * Number(entry.unit_price || 0);
+        const amount = Number(entry.quantity || 0) * Number(entry.unit_price || 0);
         usageByResident.set(entry.resident_id, (usageByResident.get(entry.resident_id) || 0) + amount);
       });
 

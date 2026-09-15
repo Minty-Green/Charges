@@ -85,6 +85,12 @@ includes('Backup creation RPC present', 'create_data_backup');
 includes('Backup restore RPC present', 'restore_data_backup');
 includes('Excel export present', 'XLSX');
 includes('PDF export present', 'jsPDF');
+includes('Finance Summary module present', 'Finance Summary');
+includes('Finance summary reads charge_entries quantity column', "resident_id,quantity,unit_price,charge_date");
+excludes('Finance summary does not reference obsolete qty column', 'entry.qty');
+includes('Finance summary refreshes recurring pricing data', 'loadRecurringPricingData');
+includes('Finance summary Excel export present', 'exportFinanceSummaryExcel');
+includes('Finance summary PDF export present', 'exportFinanceSummaryPdf');
 
 // --- Finance reporting ---
 if (financeJs.trim()) {
