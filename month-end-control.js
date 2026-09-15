@@ -469,11 +469,24 @@
   }
 
   function buildSummaryWorkbook(rows, month) {
-    const lockedCount = rows.filter(row => row.locked).length;
-    const openCount = rows.length - lockedCount;
-    const reviewCount = rows.filter(row => row.alerts.length > 0).length;
-    const usage = rows.reduce((sum, row) => sum + row.usageTotal, 0);
-    const recurringTotal = rows.reduce((sum, row) => sum + row.recurringTotal, 0);
+    // Take a numeric snapshot before building the workbook. This keeps the
+    // Excel summary aligned with the dashboard even while resident PDFs are
+    // generated from the same month-end state.
+    const exportRows = rows.map(row => {
+      const usageTotal = Number(row.usageTotal || 0);
+      const recurringTotal = Number(row.recurringTotal || 0);
+      return {
+        ...row,
+        usageTotal,
+        recurringTotal,
+        total: usageTotal + recurringTotal
+      };
+    });
+    const lockedCount = exportRows.filter(row => row.locked).length;
+    const openCount = exportRows.length - lockedCount;
+    const reviewCount = exportRows.filter(row => row.alerts.length > 0).length;
+    const usage = exportRows.reduce((sum, row) => sum + row.usageTotal, 0);
+    const recurringTotal = exportRows.reduce((sum, row) => sum + row.recurringTotal, 0);
     const grand = usage + recurringTotal;
 
     const data = [
@@ -482,10 +495,10 @@
       ['Month-End Finance Pack Summary'],
       ['Billing Cycle', month],
       ['Period', periodText(month)],
-      ['Residents', rows.length, 'Locked', lockedCount, 'Open', openCount, 'Needs Review', reviewCount],
+      ['Residents', exportRows.length, 'Locked', lockedCount, 'Open', openCount, 'Needs Review', reviewCount],
       [],
       ['Resident', 'Room / Ref', 'Usage', 'Recurring', 'Total', 'Status', 'Checks'],
-      ...rows.map(row => [
+      ...exportRows.map(row => [
         row.name,
         row.room || '',
         row.usageTotal,
@@ -506,9 +519,9 @@
       { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } }
     ];
 
-    const headerStyle = { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '176B5B' } }, alignment: { horizontal: 'center' } };
+    const headerStyle = { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { patternType: 'solid', fgColor: { rgb: '176B5B' } }, alignment: { horizontal: 'center' } };
     const titleStyle = { font: { bold: true, sz: 16, color: { rgb: '176B5B' } } };
-    const totalStyle = { font: { bold: true }, fill: { fgColor: { rgb: 'EAF6F3' } } };
+    const totalStyle = { font: { bold: true }, fill: { patternType: 'solid', fgColor: { rgb: 'EAF6F3' } } };
     if (ws.A1) ws.A1.s = titleStyle;
     for (let c = 0; c < 7; c++) {
       const headerAddress = XLSX.utils.encode_cell({ r: 7, c });
@@ -519,20 +532,21 @@
       const totalAddress = XLSX.utils.encode_cell({ r: totalRow, c });
       if (ws[totalAddress]) ws[totalAddress].s = totalStyle;
     }
-    for (let r = 8; r < 8 + rows.length; r++) {
+    const currencyFormat = '"RM" #,##0.00';
+    for (let r = 8; r < 8 + exportRows.length; r++) {
       for (const c of [2, 3, 4]) {
         const address = XLSX.utils.encode_cell({ r, c });
-        if (ws[address]) ws[address].z = 'RM #,##0.00';
+        if (ws[address]) ws[address].z = currencyFormat;
       }
     }
     for (const c of [2, 3, 4]) {
       const address = XLSX.utils.encode_cell({ r: totalRow, c });
-      if (ws[address]) ws[address].z = 'RM #,##0.00';
+      if (ws[address]) ws[address].z = currencyFormat;
     }
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Month-End Summary');
-    return XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    return XLSX.write(wb, { bookType: 'xlsx', type: 'array', cellStyles: true });
   }
 
   function buildSummaryPdf(rows, month) {
