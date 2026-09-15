@@ -366,12 +366,15 @@
     const usage = exportRows.reduce((sum, row) => sum + row.usageTotal, 0);
     const recurringTotal = exportRows.reduce((sum, row) => sum + row.recurringTotal, 0);
     const grand = usage + recurringTotal;
+    const lockedCount = exportRows.filter(row => row.locked).length;
+    const openCount = exportRows.length - lockedCount;
     const data = [
       ['Mintygreen Healthcare'],
       [branchName()],
       ['Finance Summary'],
       ['Billing Cycle', month],
       ['Period', periodLabel(month)],
+      ['Residents', exportRows.length, 'Locked', lockedCount, 'Open', openCount],
       [],
       ['Resident', 'Room / Ref', 'Usage Charges', 'Recurring Charges', 'Grand Total', 'Cycle Status'],
       ...exportRows.map(row => [row.name, row.room || '', row.usageTotal, row.recurringTotal, row.total, row.locked ? 'LOCKED' : 'OPEN']),
@@ -380,22 +383,44 @@
     ];
 
     const ws = XLSX.utils.aoa_to_sheet(data);
-    ws['!cols'] = [{ wch: 28 }, { wch: 18 }, { wch: 18 }, { wch: 20 }, { wch: 18 }, { wch: 15 }];
+    ws['!cols'] = [{ wch: 30 }, { wch: 18 }, { wch: 19 }, { wch: 21 }, { wch: 19 }, { wch: 16 }];
+    ws['!rows'] = [{ hpt: 24 }, { hpt: 18 }, { hpt: 20 }, { hpt: 19 }, { hpt: 19 }, { hpt: 22 }, { hpt: 8 }, { hpt: 24 }];
     ws['!merges'] = [
       { s: { r: 0, c: 0 }, e: { r: 0, c: 5 } },
       { s: { r: 1, c: 0 }, e: { r: 1, c: 5 } },
       { s: { r: 2, c: 0 }, e: { r: 2, c: 5 } }
     ];
 
-    const headerStyle = { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { patternType: 'solid', fgColor: { rgb: '176B5B' } }, alignment: { horizontal: 'center' } };
-    const titleStyle = { font: { bold: true, sz: 16, color: { rgb: '176B5B' } }, alignment: { horizontal: 'left' } };
-    const branchStyle = { font: { bold: true, sz: 11 } };
-    const totalStyle = { font: { bold: true }, fill: { patternType: 'solid', fgColor: { rgb: 'EAF6F3' } } };
+    const thinBorder = { bottom: { style: 'thin', color: { rgb: 'D7E3E0' } } };
+    const headerStyle = { font: { name: 'Arial', sz: 10, bold: true, color: { rgb: 'FFFFFF' } }, fill: { patternType: 'solid', fgColor: { rgb: '176B5B' } }, alignment: { horizontal: 'center', vertical: 'center' }, border: thinBorder };
+    const titleStyle = { font: { name: 'Arial', bold: true, sz: 16, color: { rgb: '176B5B' } }, alignment: { horizontal: 'left', vertical: 'center' } };
+    const branchStyle = { font: { name: 'Arial', bold: true, sz: 11, color: { rgb: '38534E' } } };
+    const reportStyle = { font: { name: 'Arial', bold: true, sz: 12, color: { rgb: '163B34' } } };
+    const metaLabelStyle = { font: { name: 'Arial', bold: true, color: { rgb: '38534E' } }, fill: { patternType: 'solid', fgColor: { rgb: 'EEF7F5' } }, alignment: { vertical: 'center' } };
+    const metaValueStyle = { font: { name: 'Arial', color: { rgb: '163B34' } }, alignment: { vertical: 'center' } };
+    const kpiLabelStyle = { font: { name: 'Arial', sz: 9, bold: true, color: { rgb: '56726C' } }, fill: { patternType: 'solid', fgColor: { rgb: 'EAF6F3' } }, alignment: { horizontal: 'center', vertical: 'center' } };
+    const kpiValueStyle = { font: { name: 'Arial', sz: 11, bold: true, color: { rgb: '0B5F9A' } }, fill: { patternType: 'solid', fgColor: { rgb: 'EAF6F3' } }, alignment: { horizontal: 'center', vertical: 'center' } };
+    const bodyStyle = { font: { name: 'Arial', sz: 10, color: { rgb: '263D39' } }, alignment: { vertical: 'center' }, border: thinBorder };
+    const alternateStyle = { ...bodyStyle, fill: { patternType: 'solid', fgColor: { rgb: 'F7FAF9' } } };
+    const totalStyle = { font: { name: 'Arial', sz: 10, bold: true, color: { rgb: '163B34' } }, fill: { patternType: 'solid', fgColor: { rgb: 'DDEFEA' } }, alignment: { vertical: 'center' }, border: { top: { style: 'medium', color: { rgb: '176B5B' } } } };
 
     if (ws.A1) ws.A1.s = titleStyle;
     if (ws.A2) ws.A2.s = branchStyle;
+    if (ws.A3) ws.A3.s = reportStyle;
+    for (const row of [3, 4]) {
+      const label = XLSX.utils.encode_cell({ r: row, c: 0 });
+      const value = XLSX.utils.encode_cell({ r: row, c: 1 });
+      if (ws[label]) ws[label].s = metaLabelStyle;
+      if (ws[value]) ws[value].s = metaValueStyle;
+    }
+    for (const c of [0, 2, 4]) {
+      const label = XLSX.utils.encode_cell({ r: 5, c });
+      const value = XLSX.utils.encode_cell({ r: 5, c: c + 1 });
+      if (ws[label]) ws[label].s = kpiLabelStyle;
+      if (ws[value]) ws[value].s = kpiValueStyle;
+    }
     for (let c = 0; c < 6; c++) {
-      const address = XLSX.utils.encode_cell({ r: 6, c });
+      const address = XLSX.utils.encode_cell({ r: 7, c });
       if (ws[address]) ws[address].s = headerStyle;
     }
     const totalRow = data.length - 1;
@@ -403,17 +428,29 @@
       const address = XLSX.utils.encode_cell({ r: totalRow, c });
       if (ws[address]) ws[address].s = totalStyle;
     }
-    const currencyFormat = '"RM" #,##0.00';
-    for (let r = 7; r < 7 + exportRows.length; r++) {
+    const currencyFormat = '"RM" #,##0.00;[Red]-"RM" #,##0.00;-';
+    for (let r = 8; r < 8 + exportRows.length; r++) {
+      ws['!rows'][r] = { hpt: 21 };
+      for (let c = 0; c < 6; c++) {
+        const address = XLSX.utils.encode_cell({ r, c });
+        if (ws[address]) ws[address].s = r % 2 === 0 ? bodyStyle : alternateStyle;
+      }
       for (const c of [2, 3, 4]) {
         const address = XLSX.utils.encode_cell({ r, c });
-        if (ws[address]) ws[address].z = currencyFormat;
+        if (ws[address]) {
+          ws[address].z = currencyFormat;
+          ws[address].s = { ...ws[address].s, alignment: { horizontal: 'right', vertical: 'center' } };
+        }
       }
+      const statusAddress = XLSX.utils.encode_cell({ r, c: 5 });
+      if (ws[statusAddress]) ws[statusAddress].s = { ...ws[statusAddress].s, font: { ...ws[statusAddress].s.font, bold: true, color: { rgb: ws[statusAddress].v === 'LOCKED' ? '176B5B' : 'B26A00' } }, alignment: { horizontal: 'center', vertical: 'center' } };
     }
     for (const c of [2, 3, 4]) {
       const address = XLSX.utils.encode_cell({ r: totalRow, c });
       if (ws[address]) ws[address].z = currencyFormat;
     }
+    ws['!rows'][totalRow] = { hpt: 23 };
+    ws['!autofilter'] = { ref: `A8:F${8 + exportRows.length}` };
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Finance Summary');

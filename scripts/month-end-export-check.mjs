@@ -57,8 +57,10 @@ context.buildSummaryWorkbook([
 
 assert.deepEqual(Array.from(capturedData[9].slice(0, 5)), ['b', '2', 22, 48.39, 70.39]);
 assert.deepEqual(Array.from(capturedData.at(-1).slice(0, 5)), ['TOTAL', '', 373.9, 48.39, 422.28999999999996]);
-assert.equal(capturedSheet.D10.z, '"RM" #,##0.00');
-assert.equal(capturedSheet.E10.z, '"RM" #,##0.00');
+assert.equal(capturedSheet.D10.z, '"RM" #,##0.00;[Red]-"RM" #,##0.00;-');
+assert.equal(capturedSheet.E10.z, '"RM" #,##0.00;[Red]-"RM" #,##0.00;-');
+assert.equal(capturedSheet.A8.s.fill.fgColor.rgb, '176B5B');
+assert.equal(capturedSheet.G10.s.alignment.wrapText, true);
 assert.equal(capturedWriteOptions.cellStyles, true);
 
-console.log('Month-end Excel regression check: 4/4 passed');
+console.log('Month-end Excel regression check: 6/6 passed');
