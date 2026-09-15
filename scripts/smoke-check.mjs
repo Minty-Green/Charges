@@ -58,6 +58,11 @@ includes('Resident-level cycle resident_id included', 'resident_id');
 includes('Cycle lock UI present', 'Close Billing Cycle');
 includes('Cycle unlock UI present', 'Unlock');
 includes('Billing-cycle table reference present', "from('billing_cycles')");
+includes('Detailed cycle close confirmation present', 'confirmCycleClose');
+includes('Cycle close confirmation shows grand total', 'You are closing');
+includes('Unlock reason is required', 'A reason is required to unlock the billing cycle');
+includes('Billing-cycle history table reference present', "from('billing_cycle_audit_log')");
+includes('Closed-cycle history UI present', 'Closed-Cycle History');
 
 // --- Recurring charge / double-charge safeguards ---
 includes('Recurring read-only helper present', 'function isRecurringReadOnlyItem');

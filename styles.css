@@ -71,6 +71,25 @@
   background: #f8fbfa;
 }
 
+.cycle-history-panel{margin-top:16px}
+#cycleHistoryTable{width:100%;border-collapse:collapse}
+#cycleHistoryTable th,#cycleHistoryTable td{
+  padding:10px 12px;border-bottom:1px solid var(--border);
+  text-align:left;vertical-align:middle;white-space:nowrap
+}
+#cycleHistoryTable th{background:#f7faf9;font-weight:700;color:#1f2937}
+#cycleHistoryTable tbody tr:hover{background:#f8fbfa}
+.cycle-history-action{display:inline-flex;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:800}
+.cycle-history-closed{background:#e8f7ee;color:#176b3a}
+.cycle-history-unlocked{background:#fff4d8;color:#8a5a00}
+.cycle-confirm-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:12px}
+.cycle-confirm-stat{padding:11px;border:1px solid var(--border);border-radius:11px;background:#f8fbfa}
+.cycle-confirm-stat span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:800}
+.cycle-confirm-stat strong{display:block;margin-top:3px;color:var(--ink);font-size:15px}
+.cycle-confirm-total{grid-column:1/-1;background:#eaf6f3;border-color:#cce7de}
+.cycle-unlock-reason{width:100%;min-height:88px;resize:vertical;border:1px solid #c9d5d1;border-radius:10px;padding:10px 11px;font:inherit}
+.cycle-unlock-reason:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(23,107,91,.1)}
+
 .audit-action {
   display: inline-block;
   padding: 4px 8px;
@@ -1298,6 +1317,8 @@ input:focus,select:focus,textarea:focus{
   .entity-actions{grid-column:1/-1;justify-content:flex-start}
   .security-summary{grid-template-columns:1fr}
   .settings-grid .security-card{padding:16px!important}
+  .cycle-confirm-grid{grid-template-columns:1fr}
+  .cycle-confirm-total{grid-column:auto}
 }
 
 

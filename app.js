@@ -5705,6 +5705,62 @@ function applyBillingCycleStatus() {
     button.disabled = currentCycleLocked;
   });
 }
+
+function billingMonthLabel(month) {
+  const [year, monthNumber] = String(month || '').split('-').map(Number);
+  if (!year || !monthNumber) return month || '';
+  return new Date(year, monthNumber - 1, 1).toLocaleDateString('en-MY', {
+    month: 'long',
+    year: 'numeric'
+  });
+}
+
+function selectedCycleTotals(month) {
+  const usage = entries.reduce(
+    (sum, entry) => sum + Number(entry.quantity || 0) * Number(entry.unit_price || 0),
+    0
+  );
+  const recurringTotal = recurring.reduce(
+    (sum, charge) => sum + Number(getRecurringAmountForMonth(charge, month) || 0),
+    0
+  );
+  return { usage, recurring: recurringTotal, total: usage + recurringTotal };
+}
+
+async function confirmCycleClose({ month, residentName, cycle, totals }) {
+  const result = await openAppModal({
+    title: `Close ${billingMonthLabel(month)}?`,
+    message: `You are closing ${billingMonthLabel(month)} for ${residentName}. Total: ${money(totals.total)}.`,
+    confirmText: 'Close Billing Cycle',
+    danger: true,
+    customHtml: `
+      <div class="cycle-confirm-grid">
+        <div class="cycle-confirm-stat"><span>Period</span><strong>${esc(formatShortDate(cycle.startDate))} – ${esc(formatShortDate(cycle.endDate))}</strong></div>
+        <div class="cycle-confirm-stat"><span>Usage</span><strong>${esc(money(totals.usage))}</strong></div>
+        <div class="cycle-confirm-stat"><span>Recurring</span><strong>${esc(money(totals.recurring))}</strong></div>
+        <div class="cycle-confirm-stat cycle-confirm-total"><span>Grand Total</span><strong>${esc(money(totals.total))}</strong></div>
+      </div>`
+  });
+  return !!result.confirmed;
+}
+
+async function requestCycleUnlockReason({ month, residentName, cycle }) {
+  const result = await openAppModal({
+    title: `Unlock ${billingMonthLabel(month)}?`,
+    message: `${residentName} · ${formatShortDate(cycle.startDate)} – ${formatShortDate(cycle.endDate)}\nCharges can be edited again after unlocking. Enter the reason for reopening this bill.`,
+    confirmText: 'Unlock Billing Cycle',
+    danger: true,
+    customHtml: '<textarea id="cycleUnlockReason" class="cycle-unlock-reason" maxlength="500" placeholder="Reason for reopening (required)"></textarea>'
+  });
+  if (!result.confirmed) return null;
+  const reason = String($('cycleUnlockReason')?.value || '').trim();
+  if (!reason) {
+    toast('A reason is required to unlock the billing cycle');
+    return null;
+  }
+  return reason;
+}
+
 $('cycleLockBtn').onclick = async () => {
 
   if (currentUserRole !== 'admin' && currentUserRole !== 'super_admin') {
@@ -5734,17 +5790,8 @@ $('cycleLockBtn').onclick = async () => {
   // -------------------------
 
   if (currentCycleLocked) {
-
-    const ok = await appConfirm(
-      `Unlock ${month} billing cycle for ${residentName}?\n\n` +
-      `${formatShortDate(cycle.startDate)} – ` +
-      `${formatShortDate(cycle.endDate)}\n\n` +
-      `Charges can be edited again after unlocking.`
-    );
-
-    if (!ok) {
-      return;
-    }
+    const unlockReason = await requestCycleUnlockReason({ month, residentName, cycle });
+    if (!unlockReason) return;
 
     const { error } = await sb
       .from('billing_cycles')
@@ -5752,6 +5799,7 @@ $('cycleLockBtn').onclick = async () => {
         is_locked: false,
         locked_at: null,
         locked_by: null,
+        status_change_reason: unlockReason,
         updated_at: new Date().toISOString()
       })
       .eq('billing_month', month)
@@ -5771,17 +5819,9 @@ $('cycleLockBtn').onclick = async () => {
   // -------------------------
 
   else {
-
-    const ok = await appConfirm(
-      `Close ${month} billing cycle for ${residentName}?\n\n` +
-      `${formatShortDate(cycle.startDate)} – ` +
-      `${formatShortDate(cycle.endDate)}\n\n` +
-      `Once closed, nobody can change charges until an Admin unlocks it.`
-    );
-
-    if (!ok) {
-      return;
-    }
+    const totals = selectedCycleTotals(month);
+    const ok = await confirmCycleClose({ month, residentName, cycle, totals });
+    if (!ok) return;
 
     const { error } = await sb
       .from('billing_cycles')
@@ -5794,6 +5834,7 @@ $('cycleLockBtn').onclick = async () => {
         is_locked: true,
         locked_at: new Date().toISOString(),
         locked_by: currentUser.id,
+        status_change_reason: 'Billing cycle closed after confirmation',
         updated_at: new Date().toISOString()
       }, {
         onConflict: 'billing_month,branch_id,resident_id'
@@ -5936,6 +5977,83 @@ async function loadLoginActivity() {
         <td>${esc(row.failure_reason || '-')}</td>
       </tr>
     `;
+  }).join('');
+}
+
+async function loadClosedCycleHistory(month, residentId = '') {
+  const body = $('cycleHistoryTableBody');
+  const count = $('cycleHistoryCount');
+  if (!body || !count) return;
+
+  let query = sb
+    .from('billing_cycle_audit_log')
+    .select(`
+      id,
+      resident_id,
+      billing_month,
+      action,
+      reason,
+      changed_by,
+      changed_at,
+      residents(name,room_ref)
+    `)
+    .eq('branch_id', currentBranchId)
+    .eq('billing_month', month)
+    .order('changed_at', { ascending: false });
+
+  if (residentId) query = query.eq('resident_id', residentId);
+
+  const { data, error } = await query;
+  if (error) {
+    console.error('Could not load closed-cycle history:', error);
+    count.textContent = '0';
+    body.innerHTML = `<tr><td colspan="6">${esc(error.message)}</td></tr>`;
+    return;
+  }
+
+  const rows = data || [];
+  count.textContent = String(rows.length);
+
+  const userIds = [...new Set(rows.map(row => row.changed_by).filter(Boolean))];
+  const profilesById = {};
+  if (userIds.length) {
+    const { data: profiles, error: profileError } = await sb
+      .from('profiles')
+      .select('id,email,display_name')
+      .in('id', userIds);
+    if (profileError) console.error('Could not load cycle-history identities:', profileError);
+    (profiles || []).forEach(profile => { profilesById[profile.id] = profile; });
+  }
+
+  if (!rows.length) {
+    body.innerHTML = '<tr><td colspan="6">No close or unlock activity found for this billing cycle.</td></tr>';
+    return;
+  }
+
+  body.innerHTML = rows.map(row => {
+    const changedText = new Date(row.changed_at).toLocaleString('en-MY', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    const profile = profilesById[row.changed_by];
+    const identity = profile
+      ? renderUserIdentity(profile.display_name, profile.email, row.changed_by)
+      : renderUserIdentity('Unknown user', '', row.changed_by || '');
+    const room = row.residents?.room_ref ? ` · ${row.residents.room_ref}` : '';
+    const actionClass = row.action === 'CLOSED' ? 'cycle-history-closed' : 'cycle-history-unlocked';
+
+    return `
+      <tr>
+        <td>${esc(changedText)}</td>
+        <td><strong>${esc(row.residents?.name || '-')}</strong>${esc(room)}</td>
+        <td>${esc(billingMonthLabel(row.billing_month))}</td>
+        <td><span class="cycle-history-action ${actionClass}">${esc(row.action)}</span></td>
+        <td>${esc(row.reason || '-')}</td>
+        <td>${identity}</td>
+      </tr>`;
   }).join('');
 }
 
@@ -6126,6 +6244,8 @@ if (userIds.length) {
 
   }
 }
+
+await loadClosedCycleHistory(month, residentId);
 
   if (!logs.length) {
 
