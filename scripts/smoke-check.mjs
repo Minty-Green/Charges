@@ -157,6 +157,10 @@ if (analyticsJs.trim()) {
   includes('Analytics monthly trend present', 'Monthly Charge Trend');
   includes('Analytics category spending present', 'Category Spending');
   includes('Analytics resident history present', 'Resident Charge History');
+  includes('Analytics item usage present', 'Item Usage Analysis');
+  includes('Analytics item usage includes zero-use residents', 'Residents With No Usage');
+  includes('Analytics item usage Excel export present', 'exportItemUsageExcel');
+  includes('Analytics item usage highest-first sorting present', 'Highest usage first');
   includes('Analytics supports 6 and 12 billing cycles', 'Last 12 cycles');
   includes('Analytics uses billing-cycle boundaries', 'getBillingCycle');
   includes('Analytics uses recurring price history', 'getRecurringAmountForMonth');

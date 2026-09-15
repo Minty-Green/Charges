@@ -45,4 +45,20 @@ assert.equal(result.residentRows[0].locked, true);
 assert.equal(result.residentRows[1].locked, false);
 assert.equal(result.residentRows[1].total, 65);
 
-console.log('Management Analytics regression check: 6/6 passed');
+const itemUsage = context.aggregateItemUsage(
+  ['2026-08', '2026-09'],
+  [{ id: 'r1', name: 'A', room_ref: '1' }, { id: 'r2', name: 'B', room_ref: '2' }],
+  [
+    { resident_id: 'r1', item_id: 'i1', quantity: 2, unit_price: 10, charge_date: '2026-07-25' },
+    { resident_id: 'r1', item_id: 'i1', quantity: 3, unit_price: 10, charge_date: '2026-08-30' },
+    { resident_id: 'r1', item_id: 'i2', quantity: 99, unit_price: 1, charge_date: '2026-08-30' }
+  ],
+  'i1'
+);
+assert.deepEqual(Array.from(itemUsage.monthlyRows, row => row.quantity), [2, 3]);
+assert.equal(itemUsage.residentRows[0].quantity, 5);
+assert.equal(itemUsage.residentRows[0].entryDays, 2);
+assert.equal(itemUsage.residentRows[0].total, 50);
+assert.equal(itemUsage.residentRows[1].quantity, 0);
+
+console.log('Management Analytics regression check: 11/11 passed');
