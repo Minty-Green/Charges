@@ -63,6 +63,10 @@ includes('Cycle close confirmation shows grand total', 'You are closing');
 includes('Unlock reason is required', 'A reason is required to unlock the billing cycle');
 includes('Billing-cycle history table reference present', "from('billing_cycle_audit_log')");
 includes('Closed-cycle history UI present', 'Closed-Cycle History');
+expect(
+  'Closed-cycle history appears before charge history',
+  html.indexOf('id="cycleHistoryTable"') < html.indexOf('id="auditTable"')
+);
 
 // --- Recurring charge / double-charge safeguards ---
 includes('Recurring read-only helper present', 'function isRecurringReadOnlyItem');
