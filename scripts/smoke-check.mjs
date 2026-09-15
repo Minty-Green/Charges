@@ -3,9 +3,11 @@ import vm from 'node:vm';
 
 const INDEX = new URL('../index.html', import.meta.url);
 const APP_JS = new URL('../app.js', import.meta.url);
+const FINANCE_JS = new URL('../finance-reporting.js', import.meta.url);
 const html = fs.readFileSync(INDEX, 'utf8');
 const appJs = fs.existsSync(APP_JS) ? fs.readFileSync(APP_JS, 'utf8') : '';
-const source = `${html}\n${appJs}`;
+const financeJs = fs.existsSync(FINANCE_JS) ? fs.readFileSync(FINANCE_JS, 'utf8') : '';
+const source = `${html}\n${appJs}\n${financeJs}`;
 
 const checks = [];
 const pass = (name, detail = '') => checks.push({ name, ok: true, detail });
@@ -37,6 +39,8 @@ includes('Role state present', 'currentUserRole');
 includes('Super Admin role present', 'super_admin');
 includes('Active branch helper present', 'getActiveBranchName');
 includes('Branch-aware export label helper present', 'getActiveBranchExportLabel');
+includes('Export company name is Mintygreen Healthcare', 'Mintygreen Healthcare');
+includes('Export branch label is branch-only', 'return getActiveBranchName();');
 includes('Branch switch function present', 'async function switchActiveBranch');
 includes('Branch switch clears usage entries', 'entries = [];');
 includes('Branch switch clears recurring records', 'recurring = [];');
@@ -81,6 +85,24 @@ includes('Backup creation RPC present', 'create_data_backup');
 includes('Backup restore RPC present', 'restore_data_backup');
 includes('Excel export present', 'XLSX');
 includes('PDF export present', 'jsPDF');
+includes('Finance Summary module present', 'Finance Summary');
+includes('Finance summary reads charge_entries quantity column', "resident_id,quantity,unit_price,charge_date");
+excludes('Finance summary does not reference obsolete qty column', 'entry.qty');
+includes('Finance summary refreshes recurring pricing data', 'loadRecurringPricingData');
+includes('Finance summary Excel export present', 'exportFinanceSummaryExcel');
+includes('Finance summary PDF export present', 'exportFinanceSummaryPdf');
+
+// --- Finance reporting ---
+if (financeJs.trim()) {
+  includes('Finance Summary module present', 'Finance Summary');
+  includes('Finance Summary load function present', 'loadFinanceSummary');
+  includes('Finance Summary Excel export present', 'exportFinanceSummaryExcel');
+  includes('Finance Summary PDF export present', 'exportFinanceSummaryPdf');
+  includes('Finance Summary is Admin/Super Admin only', "currentUserRole === 'admin' || currentUserRole === 'super_admin'");
+  includes('Finance Summary resident lock status present', 'Cycle Status');
+  expect('index.html references finance-reporting.js', /<script[^>]+src=["']finance-reporting\.js["'][^>]*><\/script>/i.test(html));
+  expect('index.html references finance-reporting.css', /<link[^>]+href=["']finance-reporting\.css["'][^>]*>/i.test(html));
+}
 
 // --- Static HTML integrity ---
 const staticIds = [...html.matchAll(/\bid=["']([^"']+)["']/g)]
@@ -90,8 +112,8 @@ const duplicateIds = [...new Set(staticIds.filter((id, i) => staticIds.indexOf(i
 expect('No duplicate static HTML IDs', duplicateIds.length === 0, duplicateIds.join(', '));
 
 // Element references may legitimately point to markup created at runtime by
-// app.js (modal fields, generated quantity inputs, etc.). Build the resolution
-// set from both static HTML and literal id attributes inside JS templates.
+// app.js / finance-reporting.js. Build the resolution set from both static HTML
+// and literal id attributes inside JavaScript templates.
 const allLiteralIds = [...source.matchAll(/\bid=["']([^"']+)["']/g)]
   .map(m => m[1])
   .filter(id => !id.includes('${'));
@@ -111,7 +133,7 @@ const onclickFunctions = [...html.matchAll(/\bonclick=["']\s*([A-Za-z_$][\w$]*)\
 const missingOnclick = [...new Set(onclickFunctions.filter(fn => !declaredFunctions.has(fn)))];
 expect('Inline onclick functions resolve', missingOnclick.length === 0, missingOnclick.join(', '));
 
-// Parse inline JS and the external app.js (when present) for syntax only.
+// Parse inline JS and external application JavaScript for syntax only.
 const inlineScripts = [...html.matchAll(/<script(?![^>]*\bsrc=)(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
   .map(m => m[1])
   .filter(s => s.trim());
@@ -119,6 +141,7 @@ let syntaxError = '';
 try {
   inlineScripts.forEach((js, i) => new vm.Script(js, { filename: `index-inline-${i + 1}.js` }));
   if (appJs.trim()) new vm.Script(appJs, { filename: 'app.js' });
+  if (financeJs.trim()) new vm.Script(financeJs, { filename: 'finance-reporting.js' });
 } catch (err) {
   syntaxError = String(err?.stack || err);
 }

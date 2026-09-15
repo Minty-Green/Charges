@@ -2707,7 +2707,7 @@ $('exportBtn').onclick = () => {
 
   const aoa = [
 
-    [`MG Bayan Lepas — ${getActiveBranchExportLabel()}`],
+    [`Mintygreen Healthcare — ${getActiveBranchExportLabel()}`],
 
     ['Resident', resident.name],
 
@@ -3129,7 +3129,7 @@ $('exportPdfBtn').onclick = () => {
   doc.setFontSize(14);
 
   doc.text(
-    'MG Bayan Lepas',
+    'Mintygreen Healthcare',
     10,
     10
   );
@@ -3478,7 +3478,7 @@ const recurringTotal = recurring.reduce(
     doc.setTextColor(100);
 
     doc.text(
-      `MG Bayan Lepas - Monthly Charges`,
+      `Mintygreen Healthcare - Monthly Charges`,
       8,
       205
     );
@@ -3559,7 +3559,7 @@ $('exportFinancePdfBtn').onclick = () => {
   doc.setFontSize(16);
 
   doc.text(
-    'MG Bayan Lepas',
+    'Mintygreen Healthcare',
     14,
     15
   );
@@ -4074,7 +4074,7 @@ for (const r of recurring) {
     doc.setTextColor(100);
 
     doc.text(
-      'MG Bayan Lepas - Monthly Charges Summary',
+      'Mintygreen Healthcare - Monthly Charges Summary',
       14,
       pageHeight - 10
     );
@@ -4148,7 +4148,7 @@ function renderCalendarPdfPage(doc, resident, month, cycle, billingDates, period
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
-  doc.text('MG Bayan Lepas', 10, 10);
+  doc.text('Mintygreen Healthcare', 10, 10);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
@@ -4329,7 +4329,7 @@ function renderFinancePdfPage(doc, resident, month, cycle, periodText, entriesFo
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
-  doc.text('MG Bayan Lepas', 14, 15);
+  doc.text('Mintygreen Healthcare', 14, 15);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
@@ -4595,7 +4595,7 @@ async function exportAllResidents(mode) {
     const pages = doc.internal.getNumberOfPages();
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const footerLabel = mode === 'calendar' ? 'MG Bayan Lepas - Monthly Charges' : 'MG Bayan Lepas - Monthly Charges Summary';
+    const footerLabel = mode === 'calendar' ? 'Mintygreen Healthcare - Monthly Charges' : 'Mintygreen Healthcare - Monthly Charges Summary';
 
     for (let i = 1; i <= pages; i++) {
       doc.setPage(i);
@@ -5060,7 +5060,7 @@ function getActiveBranchName(){
   return branches.find(b => b.id === currentBranchId)?.name || 'Branch';
 }
 function getActiveBranchExportLabel(){
-  return `${getActiveBranchName()} · Mintygreen`;
+  return getActiveBranchName();
 }
 async function switchActiveBranch(branchId) {
   if (!branchId || branchId === currentBranchId) {
