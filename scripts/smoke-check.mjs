@@ -30,7 +30,7 @@ excludes('No public sign-up flow in frontend', '.signUp(');
 excludes('No custom same-as-current password restriction', 'different from your current password');
 
 // --- Role / branch controls ---
-includes('Role helper present', 'currentRole');
+includes('Role state present', 'currentUserRole');
 includes('Super Admin role present', 'super_admin');
 includes('Active branch helper present', 'getActiveBranchName');
 includes('Branch-aware export label helper present', 'getActiveBranchExportLabel');
@@ -80,7 +80,10 @@ includes('Excel export present', 'XLSX');
 includes('PDF export present', 'jsPDF');
 
 // --- Static HTML integrity ---
-const ids = [...html.matchAll(/\bid=["']([^"']+)["']/g)].map(m => m[1]);
+// Ignore ids generated inside JS template literals such as id="qty-${itemId}".
+const ids = [...html.matchAll(/\bid=["']([^"']+)["']/g)]
+  .map(m => m[1])
+  .filter(id => !id.includes('${'));
 const duplicateIds = [...new Set(ids.filter((id, i) => ids.indexOf(id) !== i))];
 expect('No duplicate static HTML IDs', duplicateIds.length === 0, duplicateIds.join(', '));
 
@@ -90,10 +93,12 @@ const dollarRefs = [...html.matchAll(/\$\(["']([A-Za-z0-9_:-]+)["']\)/g)].map(m 
 const missingDollarRefs = [...new Set(dollarRefs.filter(id => !idSet.has(id)))];
 expect('All static $(id) references resolve', missingDollarRefs.length === 0, missingDollarRefs.join(', '));
 
-// Inline onclick handlers should reference a declared function.
+// Inline onclick handlers should reference a declared function. The app uses a
+// mix of normal declarations and window.someHandler = async ... assignments.
 const declaredFunctions = new Set([
   ...[...html.matchAll(/\bfunction\s+([A-Za-z_$][\w$]*)\s*\(/g)].map(m => m[1]),
-  ...[...html.matchAll(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?\(/g)].map(m => m[1])
+  ...[...html.matchAll(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?\(/g)].map(m => m[1]),
+  ...[...html.matchAll(/\bwindow\.([A-Za-z_$][\w$]*)\s*=/g)].map(m => m[1])
 ]);
 const onclickFunctions = [...html.matchAll(/\bonclick=["']\s*([A-Za-z_$][\w$]*)\s*\(/g)].map(m => m[1]);
 const missingOnclick = [...new Set(onclickFunctions.filter(fn => !declaredFunctions.has(fn)))];
