@@ -120,6 +120,8 @@ if (financeJs.trim()) {
   includes('Finance Summary loads all cycle recurring charges', 'const recurringRows = recurringResult.data || []');
   includes('Finance Summary Excel uses an Excel-safe RM format', `const currencyFormat = '"RM" #,##0.00'`);
   includes('Finance Summary Excel writes cell styles explicitly', 'cellStyles: true');
+  includes('Finance Summary Excel uses a native browser download', 'URL.createObjectURL(blob)');
+  excludes('Finance Summary Excel does not require missing FileSaver', 'saveAs(');
   expect('index.html references finance-reporting.js', /<script[^>]+src=["']finance-reporting\.js["'][^>]*><\/script>/i.test(html));
   expect('index.html references finance-reporting.css', /<link[^>]+href=["']finance-reporting\.css["'][^>]*>/i.test(html));
 }

@@ -427,7 +427,14 @@
     const month = currentFinanceMonth();
     const safeBranch = branchName().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'branch';
     const workbook = buildFinanceSummaryWorkbook(rows, month);
-    saveAs(new Blob([workbook], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `Finance-Summary-${safeBranch}-${month}.xlsx`);
+    const blob = new Blob([workbook], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const anchor = document.createElement('a');
+    anchor.href = URL.createObjectURL(blob);
+    anchor.download = `Finance-Summary-${safeBranch}-${month}.xlsx`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(anchor.href), 1500);
   }
 
   function exportFinanceSummaryPdf() {
