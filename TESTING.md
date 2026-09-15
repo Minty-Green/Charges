@@ -40,6 +40,20 @@ The focused login-audit regression check verifies that successful-login writes r
 
 The month-end Excel regression check verifies that recurring charges remain in each resident row and in the summary totals, totals are recalculated from usage plus recurring amounts, and the workbook uses an Excel-compatible RM number format.
 
+## Automated browser tests
+
+Install dependencies and run the Chromium tests from the repository root:
+
+```bash
+npm ci
+npx playwright install chromium
+npm run test:e2e
+```
+
+The browser suite checks the signed-out security boundary, production module loading order, missing local assets, JavaScript page errors and mobile sign-in layout. It uses a local, read-only Supabase client stub and never writes to production billing data.
+
+GitHub Actions runs both the regression suite and browser suite for every pull request, every push to `main`, on manual request and weekly. Failed runs retain screenshots, traces and the HTML report for 14 days.
+
 ## Manual release checklist
 
 The automated smoke check does not replace role-based browser testing. Before merging a meaningful billing/security change, verify:
