@@ -2,14 +2,17 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const INDEX = new URL('../index.html', import.meta.url);
+const APP_JS = new URL('../app.js', import.meta.url);
 const html = fs.readFileSync(INDEX, 'utf8');
+const appJs = fs.existsSync(APP_JS) ? fs.readFileSync(APP_JS, 'utf8') : '';
+const source = `${html}\n${appJs}`;
 
 const checks = [];
 const pass = (name, detail = '') => checks.push({ name, ok: true, detail });
 const fail = (name, detail = '') => checks.push({ name, ok: false, detail });
 const expect = (name, condition, detail = '') => condition ? pass(name, detail) : fail(name, detail);
-const includes = (name, needle) => expect(name, html.includes(needle), `Expected: ${needle}`);
-const excludes = (name, needle) => expect(name, !html.includes(needle), `Must not contain: ${needle}`);
+const includes = (name, needle) => expect(name, source.includes(needle), `Expected: ${needle}`);
+const excludes = (name, needle) => expect(name, !source.includes(needle), `Must not contain: ${needle}`);
 
 // --- Core app / PWA wiring ---
 includes('Supabase client library present', '@supabase/supabase-js@2');
@@ -17,8 +20,8 @@ includes('Turnstile library present', 'challenges.cloudflare.com/turnstile');
 includes('PWA manifest linked', 'rel="manifest" href="manifest.json"');
 includes('Service worker registration present', 'serviceWorker');
 includes('Publishable Supabase key is used', 'sb_publishable_');
-excludes('No Supabase service-role key exposed in index', 'service_role');
-excludes('No Supabase secret key exposed in index', 'sb_secret_');
+excludes('No Supabase service-role key exposed in frontend', 'service_role');
+excludes('No Supabase secret key exposed in frontend', 'sb_secret_');
 
 // --- Authentication / account safeguards ---
 includes('Password login flow present', 'signInWithPassword');
@@ -80,44 +83,48 @@ includes('Excel export present', 'XLSX');
 includes('PDF export present', 'jsPDF');
 
 // --- Static HTML integrity ---
-// Ignore ids generated inside JS template literals such as id="qty-${itemId}".
 const ids = [...html.matchAll(/\bid=["']([^"']+)["']/g)]
   .map(m => m[1])
   .filter(id => !id.includes('${'));
 const duplicateIds = [...new Set(ids.filter((id, i) => ids.indexOf(id) !== i))];
 expect('No duplicate static HTML IDs', duplicateIds.length === 0, duplicateIds.join(', '));
 
-// $() static references should point at a static id. Ignore dynamic expressions.
+// $() static references in JS should point at a static id. Ignore dynamic expressions.
 const idSet = new Set(ids);
-const dollarRefs = [...html.matchAll(/\$\(["']([A-Za-z0-9_:-]+)["']\)/g)].map(m => m[1]);
+const dollarRefs = [...source.matchAll(/\$\(["']([A-Za-z0-9_:-]+)["']\)/g)].map(m => m[1]);
 const missingDollarRefs = [...new Set(dollarRefs.filter(id => !idSet.has(id)))];
 expect('All static $(id) references resolve', missingDollarRefs.length === 0, missingDollarRefs.join(', '));
 
 // Inline onclick handlers should reference a declared function. The app uses a
 // mix of normal declarations and window.someHandler = async ... assignments.
 const declaredFunctions = new Set([
-  ...[...html.matchAll(/\bfunction\s+([A-Za-z_$][\w$]*)\s*\(/g)].map(m => m[1]),
-  ...[...html.matchAll(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?\(/g)].map(m => m[1]),
-  ...[...html.matchAll(/\bwindow\.([A-Za-z_$][\w$]*)\s*=/g)].map(m => m[1])
+  ...[...source.matchAll(/\bfunction\s+([A-Za-z_$][\w$]*)\s*\(/g)].map(m => m[1]),
+  ...[...source.matchAll(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?\(/g)].map(m => m[1]),
+  ...[...source.matchAll(/\bwindow\.([A-Za-z_$][\w$]*)\s*=/g)].map(m => m[1])
 ]);
 const onclickFunctions = [...html.matchAll(/\bonclick=["']\s*([A-Za-z_$][\w$]*)\s*\(/g)].map(m => m[1]);
 const missingOnclick = [...new Set(onclickFunctions.filter(fn => !declaredFunctions.has(fn)))];
 expect('Inline onclick functions resolve', missingOnclick.length === 0, missingOnclick.join(', '));
 
-// Parse all inline JS for syntax only. External scripts are ignored.
-const inlineScripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
+// Parse inline JS and the external app.js (when present) for syntax only.
+const inlineScripts = [...html.matchAll(/<script(?![^>]*\bsrc=)(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
   .map(m => m[1])
   .filter(s => s.trim());
 let syntaxError = '';
 try {
-  inlineScripts.forEach((source, i) => new vm.Script(source, { filename: `index-inline-${i + 1}.js` }));
+  inlineScripts.forEach((js, i) => new vm.Script(js, { filename: `index-inline-${i + 1}.js` }));
+  if (appJs.trim()) new vm.Script(appJs, { filename: 'app.js' });
 } catch (err) {
   syntaxError = String(err?.stack || err);
 }
-expect('Inline JavaScript syntax parses', !syntaxError, syntaxError);
+expect('Application JavaScript syntax parses', !syntaxError, syntaxError);
+
+if (appJs.trim()) {
+  expect('index.html references external app.js', /<script[^>]+src=["']app\.js["'][^>]*><\/script>/i.test(html));
+}
 
 // Guard against accidentally returning to the old per-resident-only read-only rule.
-const readonlyFn = html.match(/function\s+isRecurringReadOnlyItem\s*\([^)]*\)\s*\{[\s\S]*?\n\}/)?.[0] || '';
+const readonlyFn = source.match(/function\s+isRecurringReadOnlyItem\s*\([^)]*\)\s*\{[\s\S]*?\n\}/)?.[0] || '';
 expect(
   'Package/Service/Machine Rental remain globally read-only in entry views',
   readonlyFn.includes('Machine Rental') && readonlyFn.includes('Package') && readonlyFn.includes('Service') && readonlyFn.includes('recurringCategory'),
