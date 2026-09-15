@@ -6,6 +6,7 @@ on:
       - next-phase-maintainability
     paths:
       - scripts/extract-css.mjs
+      - scripts/smoke-check.mjs
 
 permissions:
   contents: write
