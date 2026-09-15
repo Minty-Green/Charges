@@ -1,5 +1,5 @@
 (() => {
-  const state = { month: '', months: 6, rows: [], categories: [], residentRows: [], loading: false, lastBranchId: null };
+  const state = { month: '', months: 6, monthList: [], rows: [], categories: [], residentRows: [], entries: [], items: [], itemUsage: null, loading: false, lastBranchId: null };
   const byId = id => document.getElementById(id);
   const allowed = () => currentUserRole === 'admin' || currentUserRole === 'super_admin';
   const money = value => new Intl.NumberFormat('en-MY', { style: 'currency', currency: 'MYR' }).format(Number(value || 0)).replace('MYR', 'RM');
@@ -20,6 +20,34 @@
     return Array.from({ length: count }, (_, index) => shiftMonth(endMonth, index - count + 1));
   }
 
+  function billingMonthForDate(date, months) {
+    return months.find(month => {
+      const cycle = getBillingCycle(month);
+      return cycle && date >= cycle.start && date <= cycle.end;
+    }) || '';
+  }
+
+  function aggregateItemUsage(months, residentsList, entries, itemId) {
+    const residentMap = new Map(residentsList.map(resident => [resident.id, { residentId: resident.id, name: resident.name || '', room: resident.room_ref || '', quantity: 0, total: 0, entryDays: new Set(), lastUsed: '' }]));
+    const monthlyMap = new Map(months.map(month => [month, { month, quantity: 0, total: 0 }]));
+    entries.filter(entry => entry.item_id === itemId).forEach(entry => {
+      const month = billingMonthForDate(entry.charge_date, months);
+      if (!month) return;
+      const quantity = Number(entry.quantity || 0);
+      const total = quantity * Number(entry.unit_price || 0);
+      const monthly = monthlyMap.get(month);
+      monthly.quantity += quantity;
+      monthly.total += total;
+      const resident = residentMap.get(entry.resident_id);
+      if (!resident) return;
+      resident.quantity += quantity;
+      resident.total += total;
+      resident.entryDays.add(entry.charge_date);
+      if (!resident.lastUsed || entry.charge_date > resident.lastUsed) resident.lastUsed = entry.charge_date;
+    });
+    return { monthlyRows: [...monthlyMap.values()], residentRows: [...residentMap.values()].map(row => ({ ...row, entryDays: row.entryDays.size })) };
+  }
+
   function aggregateAnalytics(months, residentsList, entries, recurringRows, itemsList, cycles) {
     const itemMap = new Map(itemsList.map(item => [item.id, item]));
     const cycleMap = new Map(cycles.map(row => [`${row.resident_id}:${row.billing_month}`, !!row.is_locked]));
@@ -38,10 +66,7 @@
     const addCategory = (name, amount) => categoryMap.set(name, (categoryMap.get(name) || 0) + amount);
 
     entries.forEach(entry => {
-      const month = months.find(key => {
-        const cycle = getBillingCycle(key);
-        return cycle && entry.charge_date >= cycle.start && entry.charge_date <= cycle.end;
-      });
+      const month = billingMonthForDate(entry.charge_date, months);
       if (!month) return;
       const amount = Number(entry.quantity || 0) * Number(entry.unit_price || 0);
       const monthRow = monthMap.get(month);
@@ -71,6 +96,48 @@
       return residentMonthMap.get(key) || { residentId: resident.id, month, usage: 0, recurring: 0, total: 0, locked: cycleMap.get(key) === true };
     }));
     return { monthRows, categories, residentRows };
+  }
+
+  function buildItemUsageWorkbook(item, rows, months) {
+    const totalQuantity = rows.reduce((sum, row) => sum + row.quantity, 0);
+    const totalAmount = rows.reduce((sum, row) => sum + row.total, 0);
+    const data = [
+      ['Mintygreen Healthcare'], [branchName()], ['Item Usage Analysis'],
+      ['Item', item?.name || 'Item'],
+      ['Period', `${monthLabel(months[0])} – ${monthLabel(months.at(-1))}`],
+      ['Residents', rows.length, 'Residents With Usage', rows.filter(row => row.quantity > 0).length, 'Total Quantity', totalQuantity],
+      [],
+      ['Resident', 'Room / Ref', 'Quantity Used', 'Usage Days', 'Last Used', 'Total Charge'],
+      ...rows.map(row => [row.name, row.room, row.quantity, row.entryDays, row.lastUsed || 'No usage', row.total]),
+      [], ['TOTAL', '', totalQuantity, '', '', totalAmount]
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols'] = [{ wch: 30 }, { wch: 16 }, { wch: 17 }, { wch: 14 }, { wch: 17 }, { wch: 18 }];
+    ws['!rows'] = [{ hpt: 24 }, { hpt: 18 }, { hpt: 20 }, { hpt: 19 }, { hpt: 19 }, { hpt: 22 }, { hpt: 8 }, { hpt: 24 }];
+    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 5 } }, { s: { r: 2, c: 0 }, e: { r: 2, c: 5 } }];
+    const thinBorder = { bottom: { style: 'thin', color: { rgb: 'D7E3E0' } } };
+    const headerStyle = { font: { name: 'Arial', sz: 10, bold: true, color: { rgb: 'FFFFFF' } }, fill: { patternType: 'solid', fgColor: { rgb: '176B5B' } }, alignment: { horizontal: 'center', vertical: 'center' }, border: thinBorder };
+    const bodyStyle = { font: { name: 'Arial', sz: 10, color: { rgb: '263D39' } }, alignment: { vertical: 'center' }, border: thinBorder };
+    const alternateStyle = { ...bodyStyle, fill: { patternType: 'solid', fgColor: { rgb: 'F7FAF9' } } };
+    const totalStyle = { font: { name: 'Arial', sz: 10, bold: true, color: { rgb: '163B34' } }, fill: { patternType: 'solid', fgColor: { rgb: 'DDEFEA' } }, border: { top: { style: 'medium', color: { rgb: '176B5B' } } } };
+    if (ws.A1) ws.A1.s = { font: { name: 'Arial', bold: true, sz: 16, color: { rgb: '176B5B' } } };
+    if (ws.A2) ws.A2.s = { font: { name: 'Arial', bold: true, sz: 11, color: { rgb: '38534E' } } };
+    if (ws.A3) ws.A3.s = { font: { name: 'Arial', bold: true, sz: 12, color: { rgb: '163B34' } } };
+    for (let c = 0; c < 6; c++) { const address = XLSX.utils.encode_cell({ r: 7, c }); if (ws[address]) ws[address].s = headerStyle; }
+    for (let r = 8; r < 8 + rows.length; r++) {
+      ws['!rows'][r] = { hpt: 21 };
+      for (let c = 0; c < 6; c++) { const address = XLSX.utils.encode_cell({ r, c }); if (ws[address]) ws[address].s = r % 2 === 0 ? bodyStyle : alternateStyle; }
+    }
+    const totalRow = data.length - 1;
+    for (let c = 0; c < 6; c++) { const address = XLSX.utils.encode_cell({ r: totalRow, c }); if (ws[address]) ws[address].s = totalStyle; }
+    const currencyFormat = '"RM" #,##0.00;[Red]-"RM" #,##0.00;-';
+    for (let r = 8; r < 8 + rows.length; r++) { const address = XLSX.utils.encode_cell({ r, c: 5 }); if (ws[address]) ws[address].z = currencyFormat; }
+    const totalAddress = XLSX.utils.encode_cell({ r: totalRow, c: 5 });
+    if (ws[totalAddress]) ws[totalAddress].z = currencyFormat;
+    ws['!autofilter'] = { ref: `A8:F${8 + rows.length}` };
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Item Usage');
+    return XLSX.write(wb, { bookType: 'xlsx', type: 'array', cellStyles: true });
   }
 
   function ensureUI() {
@@ -113,6 +180,11 @@
         <div class="card analytics-panel analytics-trend-panel"><div class="analytics-panel-head"><div><h3>Monthly Charge Trend</h3><p>Usage and recurring totals by billing cycle.</p></div><div class="analytics-legend"><span><i class="usage"></i>Usage</span><span><i class="recurring"></i>Recurring</span></div></div><div id="analyticsTrendChart" class="analytics-chart"></div></div>
         <div class="card analytics-panel"><div class="analytics-panel-head"><div><h3>Category Spending</h3><p id="analyticsCategoryMeta">Selected period.</p></div></div><div id="analyticsCategoryChart" class="analytics-category-list"></div></div>
       </div>
+      <div class="card analytics-panel analytics-item-panel">
+        <div class="analytics-panel-head analytics-item-head"><div><h3>Item Usage Analysis</h3><p>Check one stock item across all residents for the selected billing cycles.</p></div><div class="analytics-item-controls"><div class="tfield"><label>Item</label><select id="analyticsItem"></select></div><div class="tfield"><label>Sort Residents</label><select id="analyticsItemSort"><option value="highest">Highest usage first</option><option value="name">Resident name</option></select></div><button id="analyticsItemExcelBtn" class="btn btn-light" type="button">Export Item Excel</button></div></div>
+        <div class="analytics-item-summary"><div><span>Total Quantity</span><strong id="analyticsItemQuantity">0</strong></div><div><span>Total Charge</span><strong id="analyticsItemCharge">RM 0.00</strong></div><div><span>Residents With Usage</span><strong id="analyticsItemResidents">0</strong></div><div><span>Residents With No Usage</span><strong id="analyticsItemZero">0</strong></div></div>
+        <div class="analytics-item-layout"><div><h4>Monthly Item Trend</h4><div id="analyticsItemTrend" class="analytics-item-trend"></div></div><div class="table-wrap"><table class="analytics-table analytics-item-table"><thead><tr><th>Resident</th><th>Room / Ref</th><th class="num">Quantity</th><th class="num">Usage Days</th><th>Last Used</th><th class="num">Charge</th></tr></thead><tbody id="analyticsItemBody"></tbody><tfoot id="analyticsItemFoot"></tfoot></table></div></div>
+      </div>
       <div class="card analytics-panel analytics-history-panel">
         <div class="analytics-panel-head analytics-history-head"><div><h3>Resident Charge History</h3><p>Compare usage, recurring and total charges across billing cycles.</p></div><div class="tfield"><label>Resident</label><select id="analyticsResident"></select></div></div>
         <div class="table-wrap"><table class="analytics-table"><thead><tr><th>Billing Cycle</th><th class="num">Usage</th><th class="num">Recurring</th><th class="num">Total</th><th>Status</th></tr></thead><tbody id="analyticsResidentBody"></tbody><tfoot id="analyticsResidentFoot"></tfoot></table></div>
@@ -128,6 +200,9 @@
     byId('analyticsMonth').addEventListener('change', loadAnalytics);
     byId('analyticsRange').addEventListener('change', loadAnalytics);
     byId('analyticsResident').addEventListener('change', renderResidentHistory);
+    byId('analyticsItem').addEventListener('change', renderItemUsage);
+    byId('analyticsItemSort').addEventListener('change', renderItemUsage);
+    byId('analyticsItemExcelBtn').addEventListener('click', exportItemUsageExcel);
 
     document.querySelectorAll('.wrap > .tabs .tab').forEach(tab => {
       if (tab === button) return;
@@ -193,8 +268,12 @@
       state.rows = result.monthRows;
       state.categories = result.categories;
       state.residentRows = result.residentRows;
+      state.monthList = months;
+      state.entries = entriesResult.data || [];
+      state.items = itemsResult.data || [];
       state.lastBranchId = currentBranchId;
       populateResidentSelect();
+      populateItemSelect();
       renderAll();
     } catch (error) {
       console.error('Management analytics load failed:', error);
@@ -213,6 +292,15 @@
     if ([...select.options].some(option => option.value === previous)) select.value = previous;
   }
 
+  function populateItemSelect() {
+    const select = byId('analyticsItem');
+    const previous = select.value;
+    const usedIds = new Set(state.entries.map(entry => entry.item_id));
+    const options = state.items.filter(item => usedIds.has(item.id)).sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), undefined, { numeric: true, sensitivity: 'base' }));
+    select.innerHTML = options.map(item => `<option value="${esc(item.id)}">${esc(item.name || 'Unnamed item')}</option>`).join('');
+    if ([...select.options].some(option => option.value === previous)) select.value = previous;
+  }
+
   function renderAll() {
     const total = state.rows.reduce((sum, row) => sum + row.total, 0);
     const usage = state.rows.reduce((sum, row) => sum + row.usage, 0);
@@ -226,7 +314,48 @@
     byId('analyticsCategoryMeta').textContent = `${branchName()} · ${state.months} billing cycles`;
     renderTrend();
     renderCategories();
+    renderItemUsage();
     renderResidentHistory();
+  }
+
+  function renderItemUsage() {
+    const itemId = byId('analyticsItem')?.value || '';
+    const item = state.items.find(row => row.id === itemId);
+    const usage = aggregateItemUsage(state.monthList, residents || [], state.entries, itemId);
+    const sort = byId('analyticsItemSort')?.value || 'highest';
+    const rows = [...usage.residentRows].sort(sort === 'name' ? (a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }) : (a, b) => b.quantity - a.quantity || b.total - a.total || a.name.localeCompare(b.name));
+    state.itemUsage = { item, rows, monthlyRows: usage.monthlyRows };
+    const totalQuantity = rows.reduce((sum, row) => sum + row.quantity, 0);
+    const totalCharge = rows.reduce((sum, row) => sum + row.total, 0);
+    const withUsage = rows.filter(row => row.quantity > 0).length;
+    byId('analyticsItemQuantity').textContent = totalQuantity.toLocaleString('en-MY');
+    byId('analyticsItemCharge').textContent = money(totalCharge);
+    byId('analyticsItemResidents').textContent = String(withUsage);
+    byId('analyticsItemZero').textContent = String(rows.length - withUsage);
+    byId('analyticsItemExcelBtn').disabled = !item;
+    renderItemTrend(usage.monthlyRows);
+    byId('analyticsItemBody').innerHTML = item ? rows.map(row => `<tr class="${row.quantity ? '' : 'analytics-zero-row'}"><td><strong>${esc(row.name)}</strong></td><td>${esc(row.room || '-')}</td><td class="num">${row.quantity.toLocaleString('en-MY')}</td><td class="num">${row.entryDays}</td><td>${row.lastUsed ? esc(formatShortDate(new Date(`${row.lastUsed}T00:00:00`))) : '<span class="analytics-no-usage">No usage</span>'}</td><td class="num analytics-row-total">${money(row.total)}</td></tr>`).join('') : '<tr><td colspan="6" class="analytics-empty">No item usage is available for this period.</td></tr>';
+    byId('analyticsItemFoot').innerHTML = item ? `<tr><th colspan="2">Total</th><th class="num">${totalQuantity.toLocaleString('en-MY')}</th><th></th><th></th><th class="num">${money(totalCharge)}</th></tr>` : '';
+  }
+
+  function renderItemTrend(rows) {
+    const target = byId('analyticsItemTrend');
+    const max = Math.max(...rows.map(row => row.quantity), 1);
+    target.innerHTML = rows.map(row => `<div class="analytics-item-month"><span>${esc(monthLabel(row.month))}</span><div class="analytics-item-month-track"><i style="width:${row.quantity ? Math.max(4, row.quantity / max * 100) : 0}%"></i></div><strong>${row.quantity.toLocaleString('en-MY')}</strong></div>`).join('');
+  }
+
+  function exportItemUsageExcel() {
+    if (!state.itemUsage?.item) { if (typeof toast === 'function') toast('Select an item to export'); return; }
+    const workbook = buildItemUsageWorkbook(state.itemUsage.item, state.itemUsage.rows, state.monthList);
+    const blob = new Blob([workbook], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const anchor = document.createElement('a');
+    anchor.href = URL.createObjectURL(blob);
+    const safeItem = String(state.itemUsage.item.name || 'Item').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'Item';
+    anchor.download = `Item-Usage_${safeItem}_${state.monthList[0]}_to_${state.monthList.at(-1)}.xlsx`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(anchor.href), 1500);
   }
 
   function renderTrend() {
