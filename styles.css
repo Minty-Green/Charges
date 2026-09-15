@@ -71,7 +71,10 @@
   background: #f8fbfa;
 }
 
-.cycle-history-panel{margin-top:16px}
+.cycle-history-panel{margin:16px 0;padding:16px;border:1px solid #cce7de;border-radius:14px;background:#f8fcfa}
+.cycle-history-panel .section-card-head{margin-bottom:10px}
+.audit-charge-history-head{margin:20px 0 10px}
+.audit-charge-history-head h3{margin:0 0 4px}
 #cycleHistoryTable{width:100%;border-collapse:collapse}
 #cycleHistoryTable th,#cycleHistoryTable td{
   padding:10px 12px;border-bottom:1px solid var(--border);
