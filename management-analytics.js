@@ -1,5 +1,5 @@
 (() => {
-  const state = { month: '', months: 6, monthList: [], rows: [], categories: [], residentRows: [], entries: [], items: [], itemUsage: null, loading: false, lastBranchId: null };
+  const state = { month: '', months: 12, monthList: [], rows: [], categories: [], residentRows: [], entries: [], recurring: [], items: [], itemUsage: null, packageUsage: null, loading: false, lastBranchId: null };
   const byId = id => document.getElementById(id);
   const allowed = () => currentUserRole === 'admin' || currentUserRole === 'super_admin';
   const money = value => new Intl.NumberFormat('en-MY', { style: 'currency', currency: 'MYR' }).format(Number(value || 0)).replace('MYR', 'RM');
@@ -46,6 +46,23 @@
       if (!resident.lastUsed || entry.charge_date > resident.lastUsed) resident.lastUsed = entry.charge_date;
     });
     return { monthlyRows: [...monthlyMap.values()], residentRows: [...residentMap.values()].map(row => ({ ...row, entryDays: row.entryDays.size })) };
+  }
+
+  function aggregatePackageUsage(months, residentsList, recurringRows, itemId) {
+    const monthlyRows = months.map(month => ({ month, residents: 0, total: 0 }));
+    const residentRows = residentsList.map(resident => {
+      let cyclesBilled = 0;
+      let total = 0;
+      let latestAmount = 0;
+      months.forEach((month, index) => {
+        const amount = recurringRows.filter(charge => charge.item_id === itemId && charge.resident_id === resident.id).reduce((sum, charge) => sum + Number(getRecurringAmountForMonth(charge, month) || 0), 0);
+        if (amount > 0) { cyclesBilled += 1; total += amount; latestAmount = amount; monthlyRows[index].residents += 1; monthlyRows[index].total += amount; }
+      });
+      const finalCycle = getBillingCycle(months.at(-1));
+      const current = recurringRows.some(charge => charge.item_id === itemId && charge.resident_id === resident.id && charge.start_date <= finalCycle.end && (!charge.end_date || charge.end_date >= finalCycle.start));
+      return { residentId: resident.id, name: resident.name || '', room: resident.room_ref || '', cyclesBilled, latestAmount, total, current };
+    });
+    return { monthlyRows, residentRows };
   }
 
   function aggregateAnalytics(months, residentsList, entries, recurringRows, itemsList, cycles) {
@@ -166,7 +183,9 @@
       </div></div>
       <div class="card analytics-toolbar">
         <div class="tfield"><label>Ending Billing Cycle</label><input id="analyticsMonth" type="month"></div>
-        <div class="tfield"><label>Trend Period</label><select id="analyticsRange"><option value="6">Last 6 cycles</option><option value="12">Last 12 cycles</option></select></div>
+        <div class="tfield"><label>Trend Period</label><select id="analyticsRange"><option value="12">Last 12 cycles</option><option value="6">Last 6 cycles</option></select></div>
+        <button id="analyticsExcelBtn" class="btn btn-light" type="button">Export Report Excel</button>
+        <button id="analyticsPdfBtn" class="btn btn-light" type="button">Export Report PDF</button>
         <button id="analyticsRefreshBtn" class="btn btn-primary" type="button">Refresh Analytics</button>
       </div>
       <div id="analyticsLoading" class="card analytics-loading hidden">Loading management analytics…</div>
@@ -185,6 +204,11 @@
         <div class="analytics-item-summary"><div><span>Total Quantity</span><strong id="analyticsItemQuantity">0</strong></div><div><span>Total Charge</span><strong id="analyticsItemCharge">RM 0.00</strong></div><div><span>Residents With Usage</span><strong id="analyticsItemResidents">0</strong></div><div><span>Residents With No Usage</span><strong id="analyticsItemZero">0</strong></div></div>
         <div class="analytics-item-layout"><div><h4>Monthly Item Trend</h4><div id="analyticsItemTrend" class="analytics-item-trend"></div></div><div class="table-wrap"><table class="analytics-table analytics-item-table"><thead><tr><th>Resident</th><th>Room / Ref</th><th class="num">Quantity</th><th class="num">Usage Days</th><th>Last Used</th><th class="num">Charge</th></tr></thead><tbody id="analyticsItemBody"></tbody><tfoot id="analyticsItemFoot"></tfoot></table></div></div>
       </div>
+      <div class="card analytics-panel analytics-item-panel">
+        <div class="analytics-panel-head analytics-item-head"><div><h3>Recurring Package Analysis</h3><p>Review each recurring package, service or rental across all residents.</p></div><div class="analytics-item-controls analytics-package-controls"><div class="tfield"><label>Recurring Package</label><select id="analyticsPackage"></select></div><div class="tfield"><label>Sort Residents</label><select id="analyticsPackageSort"><option value="highest">Highest charge first</option><option value="name">Resident name</option></select></div><button id="analyticsPackageExcelBtn" class="btn btn-light" type="button">Export Package Excel</button></div></div>
+        <div class="analytics-item-summary"><div><span>Total Package Charges</span><strong id="analyticsPackageTotal">RM 0.00</strong></div><div><span>Currently Billed</span><strong id="analyticsPackageCurrent">0</strong></div><div><span>Billed During Period</span><strong id="analyticsPackageResidents">0</strong></div><div><span>Not Billed</span><strong id="analyticsPackageZero">0</strong></div></div>
+        <div class="analytics-item-layout"><div><h4>Monthly Package Trend</h4><div id="analyticsPackageTrend" class="analytics-item-trend"></div></div><div class="table-wrap"><table class="analytics-table analytics-item-table"><thead><tr><th>Resident</th><th>Room / Ref</th><th class="num">Cycles Billed</th><th class="num">Latest Amount</th><th class="num">Period Total</th><th>Status</th></tr></thead><tbody id="analyticsPackageBody"></tbody><tfoot id="analyticsPackageFoot"></tfoot></table></div></div>
+      </div>
       <div class="card analytics-panel analytics-history-panel">
         <div class="analytics-panel-head analytics-history-head"><div><h3>Resident Charge History</h3><p>Compare usage, recurring and total charges across billing cycles.</p></div><div class="tfield"><label>Resident</label><select id="analyticsResident"></select></div></div>
         <div class="table-wrap"><table class="analytics-table"><thead><tr><th>Billing Cycle</th><th class="num">Usage</th><th class="num">Recurring</th><th class="num">Total</th><th>Status</th></tr></thead><tbody id="analyticsResidentBody"></tbody><tfoot id="analyticsResidentFoot"></tfoot></table></div>
@@ -197,12 +221,17 @@
     byId('analyticsMonth').value = initialMonth;
     button.addEventListener('click', openTab);
     byId('analyticsRefreshBtn').addEventListener('click', loadAnalytics);
+    byId('analyticsExcelBtn').addEventListener('click', exportManagementExcel);
+    byId('analyticsPdfBtn').addEventListener('click', exportManagementPdf);
     byId('analyticsMonth').addEventListener('change', loadAnalytics);
     byId('analyticsRange').addEventListener('change', loadAnalytics);
     byId('analyticsResident').addEventListener('change', renderResidentHistory);
     byId('analyticsItem').addEventListener('change', renderItemUsage);
     byId('analyticsItemSort').addEventListener('change', renderItemUsage);
     byId('analyticsItemExcelBtn').addEventListener('click', exportItemUsageExcel);
+    byId('analyticsPackage').addEventListener('change', renderPackageUsage);
+    byId('analyticsPackageSort').addEventListener('change', renderPackageUsage);
+    byId('analyticsPackageExcelBtn').addEventListener('click', exportPackageUsageExcel);
 
     document.querySelectorAll('.wrap > .tabs .tab').forEach(tab => {
       if (tab === button) return;
@@ -270,10 +299,12 @@
       state.residentRows = result.residentRows;
       state.monthList = months;
       state.entries = entriesResult.data || [];
+      state.recurring = recurringResult.data || [];
       state.items = itemsResult.data || [];
       state.lastBranchId = currentBranchId;
       populateResidentSelect();
       populateItemSelect();
+      populatePackageSelect();
       renderAll();
     } catch (error) {
       console.error('Management analytics load failed:', error);
@@ -301,6 +332,15 @@
     if ([...select.options].some(option => option.value === previous)) select.value = previous;
   }
 
+  function populatePackageSelect() {
+    const select = byId('analyticsPackage');
+    const previous = select.value;
+    const recurringIds = new Set(state.recurring.map(charge => charge.item_id));
+    const options = state.items.filter(item => recurringIds.has(item.id)).sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), undefined, { numeric: true, sensitivity: 'base' }));
+    select.innerHTML = options.map(item => `<option value="${esc(item.id)}">${esc(item.name || 'Unnamed package')}</option>`).join('');
+    if ([...select.options].some(option => option.value === previous)) select.value = previous;
+  }
+
   function renderAll() {
     const total = state.rows.reduce((sum, row) => sum + row.total, 0);
     const usage = state.rows.reduce((sum, row) => sum + row.usage, 0);
@@ -315,6 +355,7 @@
     renderTrend();
     renderCategories();
     renderItemUsage();
+    renderPackageUsage();
     renderResidentHistory();
   }
 
@@ -352,6 +393,41 @@
     anchor.href = URL.createObjectURL(blob);
     const safeItem = String(state.itemUsage.item.name || 'Item').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'Item';
     anchor.download = `Item-Usage_${safeItem}_${state.monthList[0]}_to_${state.monthList.at(-1)}.xlsx`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(anchor.href), 1500);
+  }
+
+  function renderPackageUsage() {
+    const itemId = byId('analyticsPackage')?.value || '';
+    const item = state.items.find(row => row.id === itemId);
+    const usage = aggregatePackageUsage(state.monthList, residents || [], state.recurring, itemId);
+    const sort = byId('analyticsPackageSort')?.value || 'highest';
+    const rows = [...usage.residentRows].sort(sort === 'name' ? (a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }) : (a, b) => b.total - a.total || b.cyclesBilled - a.cyclesBilled || a.name.localeCompare(b.name));
+    state.packageUsage = { item, rows, monthlyRows: usage.monthlyRows };
+    const total = rows.reduce((sum, row) => sum + row.total, 0);
+    const billed = rows.filter(row => row.cyclesBilled > 0).length;
+    byId('analyticsPackageTotal').textContent = money(total);
+    byId('analyticsPackageCurrent').textContent = String(rows.filter(row => row.current).length);
+    byId('analyticsPackageResidents').textContent = String(billed);
+    byId('analyticsPackageZero').textContent = String(rows.length - billed);
+    byId('analyticsPackageExcelBtn').disabled = !item;
+    const max = Math.max(...usage.monthlyRows.map(row => row.total), 1);
+    byId('analyticsPackageTrend').innerHTML = usage.monthlyRows.map(row => `<div class="analytics-item-month"><span>${esc(monthLabel(row.month))}</span><div class="analytics-item-month-track package"><i style="width:${row.total ? Math.max(4, row.total / max * 100) : 0}%"></i></div><strong>${row.residents}</strong></div>`).join('');
+    byId('analyticsPackageBody').innerHTML = item ? rows.map(row => `<tr class="${row.cyclesBilled ? '' : 'analytics-zero-row'}"><td><strong>${esc(row.name)}</strong></td><td>${esc(row.room || '-')}</td><td class="num">${row.cyclesBilled}</td><td class="num">${money(row.latestAmount)}</td><td class="num analytics-row-total">${money(row.total)}</td><td><span class="badge ${row.current ? 'analytics-locked' : 'analytics-open'}">${row.current ? 'CURRENT' : row.cyclesBilled ? 'ENDED' : 'NOT BILLED'}</span></td></tr>`).join('') : '<tr><td colspan="6" class="analytics-empty">No recurring packages are available for this period.</td></tr>';
+    byId('analyticsPackageFoot').innerHTML = item ? `<tr><th colspan="2">Period Total</th><th></th><th></th><th class="num">${money(total)}</th><th></th></tr>` : '';
+  }
+
+  function exportPackageUsageExcel() {
+    if (!state.packageUsage?.item) { if (typeof toast === 'function') toast('Select a recurring package to export'); return; }
+    const rows = state.packageUsage.rows.map(row => ({ name: row.name, room: row.room, quantity: row.cyclesBilled, entryDays: row.current ? 'CURRENT' : row.cyclesBilled ? 'ENDED' : 'NOT BILLED', lastUsed: money(row.latestAmount), total: row.total }));
+    const workbook = buildItemUsageWorkbook({ name: `${state.packageUsage.item.name} (Recurring)` }, rows, state.monthList);
+    const blob = new Blob([workbook], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const anchor = document.createElement('a');
+    anchor.href = URL.createObjectURL(blob);
+    const safeItem = String(state.packageUsage.item.name || 'Package').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'Package';
+    anchor.download = `Recurring-Package_${safeItem}_${state.monthList[0]}_to_${state.monthList.at(-1)}.xlsx`;
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
@@ -397,6 +473,58 @@
     const recurring = rows.reduce((sum, row) => sum + row.recurring, 0);
     foot.innerHTML = rows.length ? `<tr><th>Period Total</th><th class="num">${money(usage)}</th><th class="num">${money(recurring)}</th><th class="num">${money(usage + recurring)}</th><th></th></tr>` : '';
     byId('analyticsEmpty').classList.toggle('hidden', rows.length > 0);
+  }
+
+  function downloadArray(data, filename, type) {
+    const blob = new Blob([data], { type });
+    const anchor = document.createElement('a');
+    anchor.href = URL.createObjectURL(blob);
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(anchor.href), 1500);
+  }
+
+  function exportManagementExcel() {
+    if (!state.rows.length) { if (typeof toast === 'function') toast('Load analytics before exporting'); return; }
+    const wb = XLSX.utils.book_new();
+    const overview = [
+      ['Mintygreen Healthcare'], [branchName()], ['Management Analytics Report'],
+      ['Period', `${monthLabel(state.monthList[0])} – ${monthLabel(state.monthList.at(-1))}`], [],
+      ['Billing Cycle', 'Usage Charges', 'Recurring Charges', 'Total Charges'],
+      ...state.rows.map(row => [monthLabel(row.month), row.usage, row.recurring, row.total]), [],
+      ['TOTAL', state.rows.reduce((s, r) => s + r.usage, 0), state.rows.reduce((s, r) => s + r.recurring, 0), state.rows.reduce((s, r) => s + r.total, 0)]
+    ];
+    const categories = [['Category', 'Total Charges', 'Share'], ...state.categories.map(row => [row.name, row.total, state.categories.reduce((s, r) => s + r.total, 0) ? row.total / state.categories.reduce((s, r) => s + r.total, 0) : 0])];
+    const ws = XLSX.utils.aoa_to_sheet(overview);
+    const categoryWs = XLSX.utils.aoa_to_sheet(categories);
+    ws['!cols'] = [{ wch: 24 }, { wch: 19 }, { wch: 21 }, { wch: 19 }];
+    categoryWs['!cols'] = [{ wch: 30 }, { wch: 20 }, { wch: 14 }];
+    const currency = '"RM" #,##0.00;[Red]-"RM" #,##0.00;-';
+    for (let r = 6; r < overview.length; r++) for (let c = 1; c < 4; c++) { const cell = ws[XLSX.utils.encode_cell({ r, c })]; if (cell) cell.z = currency; }
+    for (let r = 1; r < categories.length; r++) { if (categoryWs[`B${r + 1}`]) categoryWs[`B${r + 1}`].z = currency; if (categoryWs[`C${r + 1}`]) categoryWs[`C${r + 1}`].z = '0%'; }
+    const header = { font: { name: 'Arial', bold: true, color: { rgb: 'FFFFFF' } }, fill: { patternType: 'solid', fgColor: { rgb: '176B5B' } }, alignment: { horizontal: 'center' } };
+    ['A6', 'B6', 'C6', 'D6'].forEach(address => { if (ws[address]) ws[address].s = header; });
+    ['A1', 'B1', 'C1'].forEach(address => { if (categoryWs[address]) categoryWs[address].s = header; });
+    if (ws.A1) ws.A1.s = { font: { name: 'Arial', bold: true, sz: 16, color: { rgb: '176B5B' } } };
+    XLSX.utils.book_append_sheet(wb, ws, 'Monthly Overview');
+    XLSX.utils.book_append_sheet(wb, categoryWs, 'Category Spending');
+    const output = XLSX.write(wb, { bookType: 'xlsx', type: 'array', cellStyles: true });
+    downloadArray(output, `Management-Analytics_${state.monthList[0]}_to_${state.monthList.at(-1)}.xlsx`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  }
+
+  function exportManagementPdf() {
+    if (!state.rows.length) { if (typeof toast === 'function') toast('Load analytics before exporting'); return; }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    doc.setTextColor(23, 107, 91); doc.setFontSize(18); doc.text('Mintygreen Healthcare', 14, 16);
+    doc.setTextColor(35, 58, 53); doc.setFontSize(12); doc.text(`${branchName()} · Management Analytics`, 14, 24);
+    doc.setFontSize(9); doc.text(`${monthLabel(state.monthList[0])} – ${monthLabel(state.monthList.at(-1))}`, 14, 30);
+    doc.autoTable({ startY: 36, head: [['Billing Cycle', 'Usage', 'Recurring', 'Total']], body: state.rows.map(row => [monthLabel(row.month), money(row.usage), money(row.recurring), money(row.total)]), foot: [['Total', money(state.rows.reduce((s, r) => s + r.usage, 0)), money(state.rows.reduce((s, r) => s + r.recurring, 0)), money(state.rows.reduce((s, r) => s + r.total, 0))]], theme: 'grid', headStyles: { fillColor: [23, 107, 91] } });
+    const nextY = doc.lastAutoTable.finalY + 8;
+    doc.autoTable({ startY: nextY, head: [['Category', 'Charges']], body: state.categories.map(row => [row.name, money(row.total)]), theme: 'striped', headStyles: { fillColor: [40, 126, 171] } });
+    doc.save(`Management-Analytics_${state.monthList[0]}_to_${state.monthList.at(-1)}.pdf`);
   }
 
   ensureUI();
