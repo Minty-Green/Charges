@@ -37,6 +37,8 @@ includes('Role state present', 'currentUserRole');
 includes('Super Admin role present', 'super_admin');
 includes('Active branch helper present', 'getActiveBranchName');
 includes('Branch-aware export label helper present', 'getActiveBranchExportLabel');
+includes('Export company name is Mintygreen Healthcare', 'Mintygreen Healthcare');
+includes('Export branch label is branch-only', 'return getActiveBranchName();');
 includes('Branch switch function present', 'async function switchActiveBranch');
 includes('Branch switch clears usage entries', 'entries = [];');
 includes('Branch switch clears recurring records', 'recurring = [];');
