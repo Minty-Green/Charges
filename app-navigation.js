@@ -1,0 +1,5 @@
+(() => {
+  const mount = document.getElementById('appNavigationMount');
+  if (!mount) return;
+  mount.outerHTML = "<div class=\"tabs\">\n  <button class=\"btn tab active\" data-tab=\"charges\">Monthly Charges</button>\n\n  <button class=\"btn tab admin-only\" data-tab=\"recurring\">\n    Monthly Packages\n  </button>\n\n  <button class=\"btn tab admin-only\" data-tab=\"setup\">\n    Residents\n  </button>\n  <button class=\"btn tab admin-only\" data-tab=\"items\">\n    Items\n  </button>\n  <button class=\"btn tab admin-only\" data-tab=\"staff\">\n    Staff\n  </button>\n  <button class=\"btn tab superadmin-only hidden\" data-tab=\"branches\">\n    Branches\n  </button>\n  <button class=\"btn tab admin-only\" data-tab=\"audit\">\n  Audit History\n</button>\n\n<button class=\"btn tab superadmin-only hidden\" data-tab=\"loginActivity\">\n  Login Activity\n</button>\n\n<button class=\"btn tab admin-only\" data-tab=\"backups\">\n  Backups\n</button>\n\n<button class=\"btn tab\" data-tab=\"settings\">\n  Settings\n</button>\n\n</div>";
+})();
