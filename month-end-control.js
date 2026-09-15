@@ -302,9 +302,7 @@
 
     try {
       if (typeof loadRecurringPricingData === 'function') await loadRecurringPricingData();
-      if (typeof loadRecurring === 'function') await loadRecurring();
-
-      const [entryResult, cycleResult] = await Promise.all([
+      const [entryResult, cycleResult, recurringResult] = await Promise.all([
         sb.from('charge_entries')
           .select('resident_id,item_id,quantity,unit_price,charge_date')
           .eq('branch_id', currentBranchId)
@@ -313,13 +311,20 @@
         sb.from('billing_cycles')
           .select('resident_id,is_locked')
           .eq('branch_id', currentBranchId)
-          .eq('billing_month', month)
+          .eq('billing_month', month),
+        sb.from('recurring_charges')
+          .select('*')
+          .eq('branch_id', currentBranchId)
+          .lte('start_date', cycle.end)
+          .or(`end_date.is.null,end_date.gte.${cycle.start}`)
       ]);
 
       if (entryResult.error) throw entryResult.error;
       if (cycleResult.error) throw cycleResult.error;
+      if (recurringResult.error) throw recurringResult.error;
 
       const entryRows = entryResult.data || [];
+      const recurringRows = recurringResult.data || [];
       const lockMap = new Map((cycleResult.data || []).map(row => [row.resident_id, !!row.is_locked]));
       const entriesByResident = new Map();
       const recurringByResident = new Map();
@@ -330,7 +335,7 @@
         entriesByResident.set(entry.resident_id, rows);
       });
 
-      (recurring || []).forEach(charge => {
+      recurringRows.forEach(charge => {
         const rows = recurringByResident.get(charge.resident_id) || [];
         rows.push(charge);
         recurringByResident.set(charge.resident_id, rows);
