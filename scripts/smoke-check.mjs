@@ -118,7 +118,7 @@ if (financeJs.trim()) {
   includes('Finance Summary is Admin/Super Admin only', "currentUserRole === 'admin' || currentUserRole === 'super_admin'");
   includes('Finance Summary resident lock status present', 'Cycle Status');
   includes('Finance Summary loads all cycle recurring charges', 'const recurringRows = recurringResult.data || []');
-  includes('Finance Summary Excel uses an Excel-safe RM format', `const currencyFormat = '"RM" #,##0.00'`);
+  includes('Finance Summary Excel uses an Excel-safe RM format', `const currencyFormat = '"RM" #,##0.00;[Red]-"RM" #,##0.00;-'`);
   includes('Finance Summary Excel writes cell styles explicitly', 'cellStyles: true');
   includes('Finance Summary Excel uses a native browser download', 'URL.createObjectURL(blob)');
   excludes('Finance Summary Excel does not require missing FileSaver', 'saveAs(');
@@ -139,7 +139,7 @@ if (monthEndJs.trim()) {
   includes('Month-End JSZip dependency present', 'jszip.min.js');
   includes('Month-End resident finance PDFs present', 'renderFinancePdfPage');
   includes('Month-End Excel snapshots recurring totals', 'const exportRows = rows.map');
-  includes('Month-End Excel uses an Excel-safe RM format', `const currencyFormat = '"RM" #,##0.00'`);
+  includes('Month-End Excel uses an Excel-safe RM format', `const currencyFormat = '"RM" #,##0.00;[Red]-"RM" #,##0.00;-'`);
   includes('Month-End Excel writes cell styles explicitly', 'cellStyles: true');
   includes('Month-End OPEN warning present', "code: 'OPEN'");
   includes('Month-End zero-charge warning present', "code: 'ZERO'");
