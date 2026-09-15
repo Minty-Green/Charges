@@ -83,17 +83,22 @@ includes('Excel export present', 'XLSX');
 includes('PDF export present', 'jsPDF');
 
 // --- Static HTML integrity ---
-const ids = [...html.matchAll(/\bid=["']([^"']+)["']/g)]
+const staticIds = [...html.matchAll(/\bid=["']([^"']+)["']/g)]
   .map(m => m[1])
   .filter(id => !id.includes('${'));
-const duplicateIds = [...new Set(ids.filter((id, i) => ids.indexOf(id) !== i))];
+const duplicateIds = [...new Set(staticIds.filter((id, i) => staticIds.indexOf(id) !== i))];
 expect('No duplicate static HTML IDs', duplicateIds.length === 0, duplicateIds.join(', '));
 
-// $() static references in JS should point at a static id. Ignore dynamic expressions.
-const idSet = new Set(ids);
+// Element references may legitimately point to markup created at runtime by
+// app.js (modal fields, generated quantity inputs, etc.). Build the resolution
+// set from both static HTML and literal id attributes inside JS templates.
+const allLiteralIds = [...source.matchAll(/\bid=["']([^"']+)["']/g)]
+  .map(m => m[1])
+  .filter(id => !id.includes('${'));
+const idSet = new Set(allLiteralIds);
 const dollarRefs = [...source.matchAll(/\$\(["']([A-Za-z0-9_:-]+)["']\)/g)].map(m => m[1]);
 const missingDollarRefs = [...new Set(dollarRefs.filter(id => !idSet.has(id)))];
-expect('All static $(id) references resolve', missingDollarRefs.length === 0, missingDollarRefs.join(', '));
+expect('All literal $(id) references resolve', missingDollarRefs.length === 0, missingDollarRefs.join(', '));
 
 // Inline onclick handlers should reference a declared function. The app uses a
 // mix of normal declarations and window.someHandler = async ... assignments.
