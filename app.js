@@ -612,6 +612,7 @@ $('loginBtn').onclick=async()=>{
   // database work inside signInWithPassword itself.
   try {
     sessionStorage.setItem('mintygreenPendingLoginSuccess', JSON.stringify({
+      eventId: crypto.randomUUID(),
       userId: data?.user?.id || '',
       email: data?.user?.email || email,
       at: Date.now()
@@ -868,37 +869,58 @@ $('changePasswordBtn').onclick=async()=>{
 
 async function recordPendingLoginSuccess(user){
   let pending = null;
+  const storageKey = 'mintygreenPendingLoginSuccess';
+
+  const clearPending = () => {
+    try { sessionStorage.removeItem(storageKey); } catch (_) {}
+  };
 
   try {
-    const raw = sessionStorage.getItem('mintygreenPendingLoginSuccess');
+    const raw = sessionStorage.getItem(storageKey);
     if (!raw) return;
 
     pending = JSON.parse(raw);
-
-    // Clear first so a network/database error cannot create repeated records
-    // on every reload.
-    sessionStorage.removeItem('mintygreenPendingLoginSuccess');
   } catch (e) {
     console.warn('Could not read queued login activity:', e);
-    try { sessionStorage.removeItem('mintygreenPendingLoginSuccess'); } catch (_) {}
+    clearPending();
     return;
   }
 
-  if (!pending || pending.userId !== user?.id) return;
+  if (!pending || pending.userId !== user?.id || !pending.eventId) {
+    clearPending();
+    return;
+  }
 
   // Ignore stale queued markers (for example, a tab left open overnight).
-  if (pending.at && Date.now() - Number(pending.at) > 10 * 60 * 1000) return;
-
-  const { error } = await sb.from('login_activity').insert({
-    attempted_email: user?.email || pending.email || null,
-    user_id: user.id,
-    result: 'SUCCESS',
-    failure_reason: null
-  });
-
-  if (error) {
-    console.warn('Could not record successful login activity:', error);
+  if (pending.at && Date.now() - Number(pending.at) > 10 * 60 * 1000) {
+    clearPending();
+    return;
   }
+
+  const retryDelays = [0, 250, 750];
+
+  for (const delay of retryDelays) {
+    if (delay) await new Promise(resolve => setTimeout(resolve, delay));
+
+    const { error } = await sb.from('login_activity').insert({
+      event_id: pending.eventId,
+      attempted_email: user?.email || pending.email || null,
+      user_id: user.id,
+      result: 'SUCCESS',
+      failure_reason: null
+    });
+
+    // A duplicate means an earlier request reached the database but its
+    // response was lost. The unique event ID makes retries idempotent.
+    if (!error || error.code === '23505') {
+      clearPending();
+      return;
+    }
+
+    console.warn('Could not record successful login activity; will retry:', error);
+  }
+
+  // Keep the marker so the next page load can retry after a longer outage.
 }
 
 async function enterApp(user){

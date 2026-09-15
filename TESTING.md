@@ -8,6 +8,7 @@ Run from the repository root:
 
 ```bash
 node scripts/smoke-check.mjs
+node scripts/login-audit-check.mjs
 ```
 
 The check is dependency-free and validates the current `index.html` for the most important application safeguards, including:
@@ -31,6 +32,8 @@ The check is dependency-free and validates the current `index.html` for the most
 - inline JavaScript syntax parsing
 
 A non-zero exit code means the branch should not be merged until the failed check has been reviewed.
+
+The focused login-audit regression check verifies that successful-login writes retry after transient failures, remain queued after a longer outage, and treat an idempotent duplicate as safely recorded.
 
 ## Manual release checklist
 
