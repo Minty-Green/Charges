@@ -3541,7 +3541,6 @@ $('changePasswordBtn').onclick=async()=>{
   if(!newPassword || !confirmPassword){setSettingsMessage('changePasswordMsg','Please enter and confirm your new password.');return}
   if(newPassword!==confirmPassword){setSettingsMessage('changePasswordMsg','New passwords do not match.');return}
   if(newPassword.length<8){setSettingsMessage('changePasswordMsg','New password must be at least 8 characters.');return}
-  if(newPassword===currentPassword){setSettingsMessage('changePasswordMsg','Please choose a new password different from your current password.');return}
 
   const originalText=btn.textContent;
   btn.disabled=true;
@@ -5419,7 +5418,7 @@ $('exportBtn').onclick = () => {
 
   const aoa = [
 
-    ['MG Bayan Lepas — Relau Branch of Mintygreen'],
+    [`MG Bayan Lepas — ${getActiveBranchExportLabel()}`],
 
     ['Resident', resident.name],
 
@@ -5850,7 +5849,7 @@ $('exportPdfBtn').onclick = () => {
   doc.setFontSize(8);
 
   doc.text(
-    'Relau Branch of Mintygreen',
+    getActiveBranchExportLabel(),
     10,
     15
   );
@@ -6280,7 +6279,7 @@ $('exportFinancePdfBtn').onclick = () => {
   doc.setFontSize(9);
 
   doc.text(
-    'Relau Branch of Mintygreen',
+    getActiveBranchExportLabel(),
     14,
     21
   );
@@ -6864,7 +6863,7 @@ function renderCalendarPdfPage(doc, resident, month, cycle, billingDates, period
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
-  doc.text('Relau Branch of Mintygreen', 10, 15);
+  doc.text(getActiveBranchExportLabel(), 10, 15);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
@@ -7045,7 +7044,7 @@ function renderFinancePdfPage(doc, resident, month, cycle, periodText, entriesFo
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
-  doc.text('Relau Branch of Mintygreen', 14, 21);
+  doc.text(getActiveBranchExportLabel(), 14, 21);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(13);
@@ -7768,6 +7767,12 @@ function updateBranchChip() {
   const subtitle = $('brandSubtitle');
   if (subtitle) subtitle.textContent = name ? `${name} · Mintygreen` : 'Mintygreen';
 }
+function getActiveBranchName(){
+  return branches.find(b => b.id === currentBranchId)?.name || 'Branch';
+}
+function getActiveBranchExportLabel(){
+  return `${getActiveBranchName()} · Mintygreen`;
+}
 async function switchActiveBranch(branchId) {
   if (!branchId || branchId === currentBranchId) {
     closeBranchSwitcher();
@@ -7776,6 +7781,17 @@ async function switchActiveBranch(branchId) {
 
   currentBranchId = branchId;
   localStorage.setItem('mgbl_active_branch', currentBranchId);
+
+  // Clear resident/branch-specific state immediately so information from the
+  // previous branch can never remain visible while the new branch is loading.
+  entries = [];
+  recurring = [];
+  recurringOverrides = [];
+  recurringPriceHistory = [];
+  dailyEntries = [];
+  allItems = [];
+  editingItemId = null;
+  currentCycleLocked = false;
 
   const hiddenSelect = $('branchSwitcher');
   if (hiddenSelect) hiddenSelect.value = currentBranchId;
@@ -7789,10 +7805,17 @@ async function switchActiveBranch(branchId) {
   renderBranchList();
   await loadRecurring();
   renderCalendar();
+  applyBillingCycleStatus();
 
   if (chargesDisplayMode === 'daily') {
     await loadDailyEntry();
   }
+
+  // Refresh whichever branch-specific management view is currently open.
+  if (!$('itemsTab')?.classList.contains('hidden')) await loadAllItems();
+  if (!$('staffTab')?.classList.contains('hidden')) await loadStaffList();
+  if (!$('backupsTab')?.classList.contains('hidden')) await loadBackupsList();
+  if (!$('auditTab')?.classList.contains('hidden') && $('auditMonth')?.value) await loadAuditHistory();
 
   toast(`Switched to ${branches.find(b => b.id === currentBranchId)?.name || 'branch'}`);
 }
