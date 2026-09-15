@@ -11,6 +11,7 @@ node scripts/smoke-check.mjs
 node scripts/login-audit-check.mjs
 node scripts/month-end-export-check.mjs
 node scripts/finance-summary-export-check.mjs
+node scripts/management-analytics-check.mjs
 ```
 
 The check is dependency-free and validates the current `index.html` for the most important application safeguards, including:
